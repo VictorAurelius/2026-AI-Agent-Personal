@@ -83,6 +83,7 @@ exports/
 # === Canva Exports (can be large) ===
 # Only if you auto-export designs
 designs/exports/
+templates/canva/exports/
 
 # === Backup Files ===
 *.backup
@@ -92,3 +93,20 @@ designs/exports/
 # === Test Data (if sensitive) ===
 test-data/real-*.json
 test-data/production-*.json
+
+# === Workflow exports with sensitive data ===
+workflows/**/*-with-credentials.json
+workflows/**/*-production.json
+
+# === Production prompts (may contain sensitive info) ===
+prompts/**/*-production.txt
+
+# === Notion exports ===
+*.notion-export.zip
+
+# === Automation logs ===
+scripts/**/*.log
+automation-*.log
+
+# === Test data ===
+test-data/
