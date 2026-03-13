@@ -41,17 +41,41 @@ Dự án này cung cấp các chiến lược chi tiết và workflow automation
 
 ```
 .
-├── documents/                  # 📚 Tài liệu chiến lược
-│   ├── README.md              # Hướng dẫn tổng quan
-│   ├── linkedin/              # LinkedIn strategy
-│   ├── facebook/
-│   │   ├── tech-page/        # Facebook Tech Page strategy
-│   │   └── chinese-page/     # Facebook Chinese Page strategy
-│   ├── tech-stack/           # Tech stack & tools overview
-│   └── 99-archived/          # Files cũ
+├── documents/                     # 📚 Tài liệu chiến lược
+│   ├── README.md                  # Hướng dẫn tổng quan
+│   ├── strategies/                # Chiến lược theo platform
+│   │   ├── linkedin/              # LinkedIn strategy
+│   │   ├── facebook-tech/         # Facebook Tech Page strategy
+│   │   └── facebook-chinese/      # Facebook Chinese Page strategy
+│   ├── tech-stack/                # Tech stack & tools overview
+│   ├── workflows/                 # Workflow documentation
+│   ├── templates/                 # Template documentation
+│   └── archived/                  # Files cũ
 │
-├── .gitignore                 # Git ignore config
-└── README.md                  # File này
+├── workflows/                     # 🔄 Automation workflows
+│   ├── make.com/                  # Make.com workflow exports
+│   └── n8n/                       # n8n workflow exports
+│
+├── prompts/                       # 🤖 AI prompt templates
+│   ├── linkedin/                  # LinkedIn prompts
+│   ├── facebook-tech/             # Facebook Tech prompts
+│   └── facebook-chinese/          # Facebook Chinese prompts
+│
+├── templates/                     # 🎨 Content & design templates
+│   ├── canva/                     # Canva templates
+│   └── content/                   # Content templates
+│
+├── scripts/                       # 🛠️ Utility scripts
+│   ├── setup/                     # Setup scripts
+│   ├── testing/                   # Testing scripts
+│   └── utils/                     # Utilities
+│
+├── .claude/                       # ⚙️ Claude Code configuration
+│   └── skills/                    # Project skills (see SKILLS-README.md)
+│
+├── .gitignore                     # Git ignore config
+├── README.md                      # File này
+└── SKILLS-README.md               # Skills & best practices quick reference
 ```
 
 ---
@@ -82,9 +106,9 @@ Chi tiết: [`documents/tech-stack/overview.md`](./documents/tech-stack/overview
 Bắt đầu với [`documents/README.md`](./documents/README.md) để hiểu tổng quan.
 
 **Chọn platform muốn triển khai:**
-- [LinkedIn Strategy](./documents/linkedin/strategy.md)
-- [Facebook Tech Page](./documents/facebook/tech-page/strategy.md)
-- [Facebook Chinese Page](./documents/facebook/chinese-page/strategy.md)
+- [LinkedIn Strategy](./documents/strategies/linkedin/strategy.md)
+- [Facebook Tech Page](./documents/strategies/facebook-tech/strategy.md)
+- [Facebook Chinese Page](./documents/strategies/facebook-chinese/strategy.md)
 
 ### 2. Review Tech Stack
 
@@ -189,6 +213,29 @@ Bắt đầu với [`documents/README.md`](./documents/README.md) để hiểu t
 - Platform native analytics (free)
 - Notion dashboards (custom)
 - Bitly for link tracking
+
+---
+
+## 📚 Skills & Best Practices
+
+Dự án này sử dụng **Claude Skills** để standardize workflows và best practices:
+
+**📖 Quick Reference:** [SKILLS-README.md](./SKILLS-README.md)
+
+**📋 Complete Index:** [.claude/skills/SKILLS-INDEX.md](./.claude/skills/SKILLS-INDEX.md)
+
+**Core Skills:**
+- 🔧 [Automation Setup](./.claude/skills/automation-setup.md) - Make.com/n8n setup guide
+- 📝 [Content Templates](./.claude/skills/content-templates.md) - Reusable templates for all platforms
+- 🤖 [Prompt Engineering](./.claude/skills/prompt-engineering.md) - AI prompt best practices
+- 🗄️ [Notion Database](./.claude/skills/notion-database.md) - Database schemas & setup
+- 📊 [Analytics Tracking](./.claude/skills/analytics-tracking.md) - Metrics & optimization
+
+**Development Skills:**
+- 💾 [Commit Workflow](./.claude/skills/commit-workflow.md) - Git commit conventions
+- 🔀 [Git & PR Workflow](./.claude/skills/git-pr-workflow.md) - Branch & PR process
+- 📁 [File Organization](./.claude/skills/ai-agent-organize.md) - Where files should go
+- 📂 [Documentation Structure](./.claude/skills/ai-agent-docs-structure.md) - How to organize docs
 
 ---
 

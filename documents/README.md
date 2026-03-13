@@ -21,19 +21,19 @@ documents/
 
 ## 🎯 Mục đích từng folder
 
-### [`linkedin/`](./linkedin/)
+### [`strategies/linkedin/`](./strategies/linkedin/)
 Chiến lược xây dựng thương hiệu cá nhân trên LinkedIn với AI Agent
 - **Audience**: Professionals, developers, IT professionals
 - **Focus**: Personal branding, product promotion, networking
 - **Status**: Đang phát triển
 
-### [`facebook/tech-page/`](./facebook/tech-page/)
+### [`strategies/facebook-tech/`](./strategies/facebook-tech/)
 Chiến lược Facebook Page về Lập trình, AI, Cloud
 - **Audience**: Developers Việt Nam (junior-mid level)
 - **Focus**: Tech news, tutorials, tools
 - **Monetization**: Affiliate, digital products, courses
 
-### [`facebook/chinese-page/`](./facebook/chinese-page/)
+### [`strategies/facebook-chinese/`](./strategies/facebook-chinese/)
 Chiến lược Facebook Page dạy tiếng Trung
 - **Audience**: Người Việt học tiếng Trung (HSK 1-4)
 - **Focus**: Vocabulary, grammar, culture
@@ -46,9 +46,25 @@ Tổng quan tech stack, tools, và infrastructure cho các AI Agents
 - **Storage**: Notion, Airtable
 - **Publishing**: Meta Graph API, LinkedIn API
 
-### [`99-archived/`](./99-archived/)
+### [`workflows/`](./workflows/)
+Tài liệu về automation workflows
+- Content generation workflows
+- Publishing workflows
+- Analytics workflows
+
+### [`templates/`](./templates/)
+Tài liệu về templates
+- Content templates documentation
+- Design template guidelines
+
+### [`archived/`](./archived/)
 Các file cũ, drafts không còn sử dụng
 - Giữ lại để tham khảo nếu cần
+
+### [`archived-reference/`](./archived-reference/)
+Tài liệu reference từ dự án cũ (KiteClass)
+- GitHub CI cleanup policy
+- PR template patterns
 
 ---
 
@@ -66,8 +82,20 @@ Các file cũ, drafts không còn sử dụng
 
 1. **Đọc chiến lược**: Chọn platform bạn muốn triển khai
 2. **Review tech stack**: Xem [`tech-stack/overview.md`](./tech-stack/overview.md) để hiểu tools cần dùng
-3. **Follow lộ trình**: Mỗi chiến lược có roadmap chi tiết từ Week 1
-4. **Implement từng bước**: Không cần làm hết cùng lúc
+3. **Setup automation**: Follow [automation-setup skill](../.claude/skills/automation-setup.md)
+4. **Use templates**: Apply [content templates](../.claude/skills/content-templates.md)
+5. **Track performance**: Use [analytics tracking](../.claude/skills/analytics-tracking.md)
+
+## 🛠️ Skills & Best Practices
+
+Xem [SKILLS-README.md](../SKILLS-README.md) cho danh sách đầy đủ skills và best practices của dự án.
+
+**Core Skills cho AI Agent:**
+- **Automation Setup** - Make.com/n8n configuration
+- **Content Templates** - Reusable templates for all platforms
+- **Prompt Engineering** - AI prompt best practices
+- **Notion Database** - Database schemas & setup
+- **Analytics Tracking** - Metrics & optimization
 
 ---
 
