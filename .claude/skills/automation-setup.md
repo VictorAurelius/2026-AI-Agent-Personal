@@ -1,527 +1,613 @@
 # Automation Setup Guide - AI Agent Project
 
-**Version:** 1.0
-**Last Updated:** 2026-03-13
-**Purpose:** Step-by-step setup guide for Make.com/n8n automation workflows
+**Version:** 2.0 (Local LLM Edition)
+**Last Updated:** 2026-03-16
+**Purpose:** Setup n8n + Ollama + PostgreSQL on WSL2 for AI-powered social media automation
 
 ---
 
 ## 📋 Overview
 
-This skill provides comprehensive guidance for setting up automation workflows for AI Agent Social Automation project using Make.com or n8n.
+This skill provides a complete guide for setting up a **100% local** automation stack:
+
+```
+┌─────────────────────────────────────────────────┐
+│  MÁY CHỦ LOCAL 32GB (WSL2)                      │
+├─────────────────────────────────────────────────┤
+│  Docker Compose:                                │
+│  ┌────────┐ ┌────────────┐ ┌─────────────────┐ │
+│  │  n8n   │ │ PostgreSQL │ │ Ollama          │ │
+│  │ :5678  │ │   :5432    │ │ Llama 3.1 8B    │ │
+│  └────────┘ └────────────┘ └─────────────────┘ │
+└─────────────────────────────────────────────────┘
+
+Chi phí: $0/tháng (hoàn toàn miễn phí)
+```
 
 ## 🎯 When to Use This Skill
 
 **Use this skill when:**
-- ✅ Setting up automation for the first time
-- ✅ Choosing between Make.com vs n8n
-- ✅ Configuring integrations (Notion, Claude API, social platforms)
+- ✅ Setting up local automation infrastructure
+- ✅ Configuring Docker services (n8n, PostgreSQL, Ollama)
+- ✅ Creating n8n workflows for content generation
+- ✅ Integrating with social media APIs
 - ✅ Troubleshooting automation issues
-- ✅ Creating new automation workflows
 
 ---
 
-## 🔄 Tool Comparison: Make.com vs n8n
+## 🚀 Part 1: Docker Environment Setup
 
-### Make.com (Recommended for Beginners)
+### Step 1: Install Docker on WSL2 (15 minutes)
 
-**Pros:**
-- ✅ Visual, intuitive interface
-- ✅ Pre-built integrations (200+ apps)
-- ✅ No coding required
-- ✅ Excellent documentation
-- ✅ Reliable execution
-- ✅ Built-in error handling
-- ✅ Cloud-hosted (no server needed)
+**Prerequisites:**
+- Windows 10/11 with WSL2 enabled
+- Ubuntu (or similar) installed on WSL2
+- 32GB RAM recommended (16GB minimum)
 
-**Cons:**
-- ❌ Cost: $9-29/month (after free tier)
-- ❌ Limited free tier (1,000 operations/month)
-- ❌ Less flexibility for custom logic
-- ❌ Vendor lock-in
+**Installation:**
 
-**Best for:**
-- Quick setup (ready in 1-2 hours)
-- Non-technical users
-- LinkedIn + Facebook automation
-- When reliability > cost
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
 
-**Pricing:**
-- Free: 1,000 operations/month
-- Core: $9/month (10,000 ops)
-- Pro: $16/month (10,000 ops + advanced features)
-- Teams: $29/month (10,000 ops + team features)
+# Install Docker
+sudo apt install docker.io docker-compose -y
 
----
+# Add your user to docker group (avoids using sudo)
+sudo usermod -aG docker $USER
 
-### n8n (Recommended for Advanced Users)
+# Restart WSL (run in PowerShell)
+# wsl --shutdown
+# Then reopen Ubuntu terminal
 
-**Pros:**
-- ✅ Open source & self-hosted
-- ✅ Free (unlimited operations if self-hosted)
-- ✅ Highly flexible (JavaScript support)
-- ✅ Full control over data
-- ✅ Large community
-- ✅ Can integrate with any API
-
-**Cons:**
-- ❌ Requires server setup (VPS, Docker)
-- ❌ Steeper learning curve
-- ❌ More maintenance required
-- ❌ Need technical knowledge for troubleshooting
-
-**Best for:**
-- Cost-sensitive projects (long-term)
-- Technical users comfortable with Docker
-- Complex custom workflows
-- When full control > convenience
-
-**Pricing:**
-- Self-hosted: Free (need VPS ~$5-10/month)
-- Cloud: $20/month starter
-
----
-
-## 🚀 Quick Start: Make.com Setup
-
-### Phase 1: Account Setup (15 minutes)
-
-#### Step 1: Create Make.com Account
-
-1. Go to https://www.make.com
-2. Sign up with email
-3. Verify email address
-4. Choose "Core" plan (start with free tier)
-
-#### Step 2: Familiarize with Interface
-
-- **Scenarios**: Workflows/automations
-- **Modules**: Individual steps in workflow
-- **Routes**: Conditional paths
-- **Data Store**: Store data between runs
-- **Webhooks**: Trigger scenarios via HTTP
-
----
-
-### Phase 2: Core Integrations (30-45 minutes)
-
-#### Integration 1: Notion Setup
-
-**Purpose:** Content queue & metrics storage
-
-**Steps:**
-1. In Make.com, add "Notion" module
-2. Click "Create a connection"
-3. Authorize Make.com to access Notion
-4. Select workspace
-5. Test connection
-
-**Notion Database Setup:**
-```
-Content Queue Database:
-- Title (Title)
-- Platform (Select: LinkedIn, Facebook Tech, Facebook Chinese)
-- Content Type (Select: Thought Leadership, Tutorial, News, etc.)
-- Status (Select: Draft, Ready, Published, Scheduled)
-- Publish Date (Date)
-- Content (Text)
-- Generated Content (Text)
-- Image URL (URL)
-- Performance (Number)
-- Notes (Text)
+# Verify installation
+docker --version
+docker-compose --version
 ```
 
-**Test:**
-- Create a test entry manually
-- Use Make.com to read it
-- Verify data appears correctly
+### Step 2: Create Project Structure (5 minutes)
+
+```bash
+# Create directory
+mkdir -p ~/social-automation
+cd ~/social-automation
+
+# Create docker-compose.yml
+touch docker-compose.yml
+
+# Create data directories
+mkdir -p data/postgres data/n8n data/ollama
+```
+
+### Step 3: Docker Compose Configuration (10 minutes)
+
+Create `docker-compose.yml`:
+
+```yaml
+version: '3.8'
+
+services:
+  # Workflow Automation
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Security
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=your_secure_password
+      # Configuration
+      - WEBHOOK_URL=http://localhost:5678/
+      - GENERIC_TIMEZONE=Asia/Ho_Chi_Minh
+      - N8N_ENCRYPTION_KEY=your_random_encryption_key
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - postgres
+      - ollama
+    networks:
+      - automation-network
+
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=your_db_password
+      - POSTGRES_DB=social_automation
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - automation-network
+
+  # Local LLM
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - automation-network
+    # GPU Support (uncomment if you have NVIDIA GPU)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  n8n_data:
+  postgres_data:
+  ollama_data:
+
+networks:
+  automation-network:
+    driver: bridge
+```
+
+### Step 4: Start Services (5 minutes)
+
+```bash
+# Start all services
+docker-compose up -d
+
+# Check status
+docker ps
+
+# Expected output:
+# CONTAINER ID   IMAGE              STATUS    PORTS
+# xxx            n8nio/n8n          Up        0.0.0.0:5678->5678/tcp
+# xxx            postgres:15        Up        0.0.0.0:5432->5432/tcp
+# xxx            ollama/ollama      Up        0.0.0.0:11434->11434/tcp
+```
+
+### Step 5: Download Llama Model (10-30 minutes)
+
+```bash
+# Pull Llama 3.1 8B model (~4.7GB download)
+docker exec -it ollama ollama pull llama3.1:8b
+
+# Verify model
+docker exec -it ollama ollama list
+
+# Test model
+docker exec -it ollama ollama run llama3.1:8b "Hello! Write a short LinkedIn post about AI."
+```
 
 ---
 
-#### Integration 2: Claude API Setup
+## 🗄️ Part 2: PostgreSQL Setup
 
-**Purpose:** AI content generation
+### Step 1: Create Database Schema
 
-**Steps:**
-1. Get API key from https://console.anthropic.com
-2. In Make.com, add "HTTP" module
-3. Configure request:
-   - Method: POST
-   - URL: https://api.anthropic.com/v1/messages
-   - Headers:
-     ```
-     x-api-key: YOUR_CLAUDE_API_KEY
-     anthropic-version: 2023-06-01
-     content-type: application/json
-     ```
-   - Body:
-     ```json
-     {
-       "model": "claude-3-5-sonnet-20241022",
-       "max_tokens": 1024,
-       "messages": [
-         {
-           "role": "user",
-           "content": "Your prompt here"
-         }
-       ]
-     }
-     ```
+```bash
+# Connect to PostgreSQL
+docker exec -it postgres psql -U postgres -d social_automation
+```
 
-**Test:**
-- Send test request: "Write a LinkedIn post about AI automation"
-- Verify response contains generated content
-- Check token usage (should be < 1000 tokens)
+Run the following SQL:
 
-**Cost Estimate:**
-- Input: $3 per million tokens
-- Output: $15 per million tokens
-- Average post: ~500 tokens = $0.0075 per post
-- 100 posts/month = ~$0.75
+```sql
+-- Content Queue Table
+CREATE TABLE content_queue (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    platform VARCHAR(50) NOT NULL CHECK (platform IN ('linkedin', 'facebook_tech', 'facebook_chinese')),
+    content_type VARCHAR(50),
+    status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'review', 'approved', 'scheduled', 'published', 'rejected')),
+    original_prompt TEXT,
+    generated_content TEXT,
+    final_content TEXT,
+    scheduled_date TIMESTAMP,
+    published_date TIMESTAMP,
+    post_url VARCHAR(500),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Metrics Table
+CREATE TABLE metrics (
+    id SERIAL PRIMARY KEY,
+    content_id INTEGER REFERENCES content_queue(id) ON DELETE CASCADE,
+    platform VARCHAR(50),
+    reach INTEGER DEFAULT 0,
+    impressions INTEGER DEFAULT 0,
+    engagement INTEGER DEFAULT 0,
+    likes INTEGER DEFAULT 0,
+    comments INTEGER DEFAULT 0,
+    shares INTEGER DEFAULT 0,
+    clicks INTEGER DEFAULT 0,
+    engagement_rate DECIMAL(5,2),
+    recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Workflow Logs
+CREATE TABLE workflow_logs (
+    id SERIAL PRIMARY KEY,
+    workflow_name VARCHAR(100),
+    execution_id VARCHAR(100),
+    status VARCHAR(20) CHECK (status IN ('success', 'error', 'warning')),
+    message TEXT,
+    execution_time_ms INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Prompt Library
+CREATE TABLE prompts (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    platform VARCHAR(50),
+    content_type VARCHAR(50),
+    system_prompt TEXT NOT NULL,
+    user_prompt_template TEXT NOT NULL,
+    variables TEXT[], -- Array of variable names like ['topic', 'context']
+    version INTEGER DEFAULT 1,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_content_status ON content_queue(status);
+CREATE INDEX idx_content_platform ON content_queue(platform);
+CREATE INDEX idx_content_scheduled ON content_queue(scheduled_date);
+CREATE INDEX idx_metrics_content ON metrics(content_id);
+CREATE INDEX idx_prompts_active ON prompts(is_active);
+
+-- Insert sample prompts
+INSERT INTO prompts (name, platform, content_type, system_prompt, user_prompt_template, variables) VALUES
+(
+    'linkedin_thought_leadership',
+    'linkedin',
+    'thought_leadership',
+    'You are a senior software engineer creating LinkedIn content for Vietnamese IT professionals. Write in a professional but approachable tone. Use Vietnamese or English based on the topic.',
+    'Write a LinkedIn post about {{topic}}.
+
+Requirements:
+- 150-200 words
+- Start with an attention-grabbing hook
+- Share a personal insight or experience
+- Include practical advice
+- End with a question to encourage engagement
+- Add 3-5 relevant hashtags
+
+Additional context: {{context}}',
+    ARRAY['topic', 'context']
+),
+(
+    'facebook_tech_news',
+    'facebook_tech',
+    'tech_news',
+    'You are a tech enthusiast creating Facebook content for Vietnamese developers. Use a casual, friendly tone with emojis.',
+    'Write a Facebook post about this tech news: {{topic}}
+
+Requirements:
+- Keep it concise (100-150 words)
+- Explain why it matters
+- Include your opinion
+- Use 2-3 relevant emojis
+- End with a discussion question
+
+Source/context: {{context}}',
+    ARRAY['topic', 'context']
+),
+(
+    'facebook_chinese_vocab',
+    'facebook_chinese',
+    'vocabulary',
+    'You are a Chinese language teacher creating educational content for Vietnamese learners. Mix Vietnamese explanations with Chinese examples.',
+    'Create a vocabulary post about: {{topic}}
+
+Requirements:
+- Include Chinese characters, pinyin, and Vietnamese meaning
+- Provide 2-3 example sentences
+- Add memory tips or mnemonics
+- Keep it beginner-friendly (HSK 1-3)
+- Use encouraging, supportive tone
+
+Level: {{context}}',
+    ARRAY['topic', 'context']
+);
+
+-- Exit psql
+\q
+```
+
+### Step 2: Verify Setup
+
+```bash
+# List tables
+docker exec -it postgres psql -U postgres -d social_automation -c "\dt"
+
+# Check prompts
+docker exec -it postgres psql -U postgres -d social_automation -c "SELECT name, platform FROM prompts;"
+```
 
 ---
 
-#### Integration 3: LinkedIn API (Optional - Manual Posting Recommended)
+## 🔧 Part 3: n8n Configuration
 
-**Note:** LinkedIn API requires company page + approval process. For personal profiles, manual posting is recommended.
+### Step 1: Access n8n
 
-**For Company Pages:**
-1. Create LinkedIn App at https://www.linkedin.com/developers
-2. Get Client ID & Secret
-3. Request access to "Share on LinkedIn" API
-4. Generate access token (OAuth 2.0)
-5. Configure Make.com LinkedIn module
+1. Open browser: http://localhost:5678
+2. Login with credentials from docker-compose.yml
+3. Complete initial setup wizard
 
-**Alternative: Manual Posting**
-- Claude generates content → Notion
-- Review in Notion
-- Copy & paste to LinkedIn (1-2 minutes)
-- Track metrics manually
+### Step 2: Add PostgreSQL Credentials
+
+1. Go to **Credentials** → **Add Credential**
+2. Search for "PostgreSQL"
+3. Configure:
+   ```
+   Host: postgres
+   Port: 5432
+   Database: social_automation
+   User: postgres
+   Password: your_db_password
+   ```
+4. Test connection
+5. Save as "PostgreSQL - Social Automation"
+
+### Step 3: Create First Workflow - Content Generation
+
+Create a new workflow with these nodes:
+
+**Node 1: Manual Trigger**
+- Allows manual execution for testing
+
+**Node 2: Set Variables**
+- Configure input data:
+  ```json
+  {
+    "topic": "How AI is changing software development",
+    "platform": "linkedin",
+    "content_type": "thought_leadership",
+    "context": "Focus on practical implications for developers"
+  }
+  ```
+
+**Node 3: PostgreSQL - Get Prompt**
+- Operation: Execute Query
+- Query:
+  ```sql
+  SELECT system_prompt, user_prompt_template
+  FROM prompts
+  WHERE platform = '{{ $json.platform }}'
+    AND content_type = '{{ $json.content_type }}'
+    AND is_active = true
+  LIMIT 1
+  ```
+
+**Node 4: Code - Prepare Prompt**
+- JavaScript code:
+  ```javascript
+  const systemPrompt = $input.first().json.system_prompt;
+  let userPrompt = $input.first().json.user_prompt_template;
+
+  // Replace variables
+  const topic = $('Set Variables').first().json.topic;
+  const context = $('Set Variables').first().json.context;
+
+  userPrompt = userPrompt.replace('{{topic}}', topic);
+  userPrompt = userPrompt.replace('{{context}}', context);
+
+  return {
+    system_prompt: systemPrompt,
+    user_prompt: userPrompt
+  };
+  ```
+
+**Node 5: HTTP Request - Ollama**
+- Method: POST
+- URL: `http://ollama:11434/api/chat`
+- Body (JSON):
+  ```json
+  {
+    "model": "llama3.1:8b",
+    "messages": [
+      {
+        "role": "system",
+        "content": "{{ $json.system_prompt }}"
+      },
+      {
+        "role": "user",
+        "content": "{{ $json.user_prompt }}"
+      }
+    ],
+    "stream": false
+  }
+  ```
+- Timeout: 60000 (60 seconds)
+
+**Node 6: Code - Extract Content**
+- JavaScript:
+  ```javascript
+  const response = $input.first().json;
+  const content = response.message?.content || 'Generation failed';
+
+  return {
+    generated_content: content,
+    topic: $('Set Variables').first().json.topic,
+    platform: $('Set Variables').first().json.platform,
+    content_type: $('Set Variables').first().json.content_type
+  };
+  ```
+
+**Node 7: PostgreSQL - Save Content**
+- Operation: Insert
+- Table: content_queue
+- Columns:
+  - title: `{{ $json.topic }}`
+  - platform: `{{ $json.platform }}`
+  - content_type: `{{ $json.content_type }}`
+  - generated_content: `{{ $json.generated_content }}`
+  - status: `review`
+
+**Node 8: Telegram - Notify (Optional)**
+- Configure Telegram credentials
+- Message: `New content ready for review: {{ $json.topic }}`
+
+### Step 4: Test Workflow
+
+1. Click "Execute Workflow"
+2. Check each node output
+3. Verify content saved in PostgreSQL:
+   ```bash
+   docker exec -it postgres psql -U postgres -d social_automation -c "SELECT id, title, status FROM content_queue;"
+   ```
 
 ---
 
-#### Integration 4: Meta Graph API (Facebook)
+## 🔗 Part 4: Platform Integrations
 
-**Purpose:** Auto-post to Facebook Pages
+### Telegram Bot Setup
 
-**Steps:**
-1. Create Facebook App at https://developers.facebook.com
-2. Get Page Access Token:
+1. **Create Bot:**
+   - Message @BotFather on Telegram
+   - Send `/newbot`
+   - Follow instructions, save the token
+
+2. **Get Chat ID:**
+   - Message your new bot
+   - Visit: `https://api.telegram.org/bot<TOKEN>/getUpdates`
+   - Find `chat.id` in the response
+
+3. **Add to n8n:**
+   - Credentials → Add → Telegram
+   - Enter bot token
+   - Test with a simple message node
+
+### Meta Graph API (Facebook)
+
+1. **Create Facebook App:**
+   - Go to developers.facebook.com
+   - Create new app
+   - Add "Facebook Login" product
+
+2. **Get Page Access Token:**
    - Tools → Graph API Explorer
    - Select your page
    - Generate token with permissions:
      - `pages_show_list`
      - `pages_read_engagement`
      - `pages_manage_posts`
-3. In Make.com, add "HTTP" module
-4. Configure POST request:
-   - URL: `https://graph.facebook.com/v18.0/{page-id}/feed`
-   - Method: POST
-   - Body:
-     ```json
-     {
-       "message": "Your post content",
-       "access_token": "YOUR_PAGE_ACCESS_TOKEN"
-     }
-     ```
 
-**Test:**
-- Post "Test from Make.com automation"
-- Verify appears on Facebook Page
-- Check response includes post ID
+3. **n8n HTTP Request for Posting:**
+   ```
+   Method: POST
+   URL: https://graph.facebook.com/v18.0/{page-id}/feed
+   Body:
+   {
+     "message": "{{ $json.final_content }}",
+     "access_token": "YOUR_PAGE_TOKEN"
+   }
+   ```
 
----
+### LinkedIn (Manual or Buffer)
 
-#### Integration 5: Telegram Notifications
+**Option A: Manual Posting (Recommended for start)**
+- n8n generates content → PostgreSQL
+- Review in database or simple web UI
+- Copy & paste to LinkedIn manually
 
-**Purpose:** Get notified when workflows run/fail
-
-**Steps:**
-1. Create Telegram bot:
-   - Message @BotFather on Telegram
-   - Send `/newbot`
-   - Follow instructions
-   - Save bot token
-2. Get your Chat ID:
-   - Message your bot
-   - Visit: `https://api.telegram.org/bot{TOKEN}/getUpdates`
-   - Find your `chat_id`
-3. In Make.com, add "HTTP" module
-4. Configure:
-   - URL: `https://api.telegram.org/bot{TOKEN}/sendMessage`
-   - Method: POST
-   - Body:
-     ```json
-     {
-       "chat_id": "YOUR_CHAT_ID",
-       "text": "Workflow notification message"
-     }
-     ```
-
-**Test:**
-- Send test message
-- Verify received on Telegram
-- Try with emojis & formatting (Markdown)
+**Option B: Buffer Integration**
+- Sign up for Buffer ($6/month)
+- Use Buffer API in n8n
+- Automate scheduling
 
 ---
 
-### Phase 3: First Workflow Creation (60 minutes)
+## 📊 Part 5: Monitoring & Maintenance
 
-#### Workflow 1: LinkedIn Content Generation
+### Daily Checks
 
-**Flow:**
-```
-Notion (Watch Records)
-  → Filter (Status = "Ready")
-  → Claude API (Generate Content)
-  → Notion (Update Record with Generated Content)
-  → Telegram (Notify Success)
-```
-
-**Step-by-step:**
-
-1. **Module 1: Notion - Watch Records**
-   - Select "Content Queue" database
-   - Filter: Platform = LinkedIn, Status = Ready
-   - Schedule: Every 1 hour
-   - Limit: 1 record
-
-2. **Module 2: Set Variables**
-   - Extract: Title, Content Type, Notes
-   - Prepare prompt template
-
-3. **Module 3: HTTP Request (Claude API)**
-   - Use prompt from `prompts/linkedin/` based on Content Type
-   - Pass variables: {{title}}, {{notes}}
-   - Parse response: `{{response.content[0].text}}`
-
-4. **Module 4: Notion - Update Record**
-   - Update record with ID from step 1
-   - Set "Generated Content" = Claude response
-   - Set "Status" = "Review"
-
-5. **Module 5: Telegram - Send Message**
-   - Message: "✅ Generated LinkedIn post: {{title}}"
-   - Only if success
-
-**Prompt Template Example:**
-```
-You are a LinkedIn content creator for IT professionals.
-
-Topic: {{title}}
-Type: {{contentType}}
-Additional context: {{notes}}
-
-Write a LinkedIn post that:
-- Starts with a hook
-- Provides value (insights, tips, or actionable advice)
-- Uses 3-5 short paragraphs
-- Includes 3-5 relevant hashtags
-- Length: 150-200 words
-
-Tone: Professional but conversational
-```
-
-**Test Workflow:**
-- Create test Notion entry
-- Run scenario manually
-- Check Notion updated correctly
-- Verify Telegram notification
-- Review generated content quality
-
----
-
-#### Workflow 2: Facebook Auto-Posting (Scheduled)
-
-**Flow:**
-```
-Schedule (Daily 9 AM)
-  → Notion (Get Record where Status = "Scheduled" & Publish Date = Today)
-  → Meta Graph API (Post to Facebook)
-  → Notion (Update Status = "Published")
-  → Telegram (Notify)
-```
-
-**Configuration:**
-- Schedule: 9:00 AM daily (Vietnam timezone)
-- Limit: 1 post per run
-- Platform filter: Facebook Tech OR Facebook Chinese
-
----
-
-### Phase 4: Testing & Debugging (30 minutes)
-
-#### Testing Checklist
-
-- [ ] Test each module individually
-- [ ] Test complete workflow end-to-end
-- [ ] Test error scenarios (API failure, missing data)
-- [ ] Test with real data (not just test entries)
-- [ ] Verify Telegram notifications work
-- [ ] Check Notion updates correctly
-- [ ] Validate generated content quality
-- [ ] Test scheduling (run at correct time)
-
-#### Common Issues & Solutions
-
-**Issue: Claude API returns error**
-- Check API key is correct
-- Verify headers match exactly
-- Check request body JSON format
-- Review token limits (4096 max)
-- Check quota (rate limits)
-
-**Issue: Notion doesn't update**
-- Verify database ID is correct
-- Check permissions (Make.com has access)
-- Validate field names match exactly
-- Check data types (text vs select vs date)
-
-**Issue: Workflow doesn't trigger**
-- Check schedule is active
-- Verify trigger conditions
-- Review Notion filter criteria
-- Check "Watch Records" limit setting
-
-**Issue: Facebook post fails**
-- Verify Page Access Token is valid
-- Check token hasn't expired
-- Validate page permissions
-- Review post content (no banned words)
-
----
-
-## 🔧 Advanced Configuration
-
-### Error Handling
-
-**Add error handling to every workflow:**
-
-1. **Error Handler Module** (after each critical step)
-   - Catches errors
-   - Logs to Notion "Error Log" database
-   - Sends Telegram alert
-   - Stops workflow gracefully
-
-**Example:**
-```
-HTTP Request (Claude API)
-  → [Success] Continue workflow
-  → [Error] → Telegram Alert → Notion Log → Stop
-```
-
-### Rate Limiting
-
-**Claude API:**
-- Limit: 50 requests/minute
-- Add "Sleep" module if making multiple requests
-
-**Meta Graph API:**
-- Limit: 200 calls/hour per user
-- Add delay between posts
-
-### Data Validation
-
-**Before posting to social media:**
-- Check content length (LinkedIn: 3,000 chars, Facebook: 63,206 chars)
-- Validate hashtags (LinkedIn: max 30, Facebook: max 30)
-- Ensure images exist (if URL provided)
-- Check for banned words/phrases
-
----
-
-## 📊 Monitoring & Optimization
-
-### Key Metrics to Track
-
-**In Notion Dashboard:**
-- Total posts generated (weekly/monthly)
-- Success rate (% posted successfully)
-- Average generation time
-- API costs (Claude, Facebook)
-- Engagement per post
-
-**In Make.com:**
-- Operations used (vs limit)
-- Error rate
-- Execution time per scenario
-- Data transfer
-
-### Cost Optimization
-
-**Reduce Make.com operations:**
-- Use webhooks instead of polling
-- Increase interval between checks
-- Batch operations where possible
-- Use filters to reduce unnecessary runs
-
-**Reduce Claude API costs:**
-- Use shorter prompts
-- Reuse prompts (template-based)
-- Optimize max_tokens setting
-- Cache common responses (if applicable)
-
----
-
-## 🚀 n8n Setup (Alternative)
-
-### Quick Start (Self-Hosted)
-
-**Prerequisites:**
-- VPS/server with Docker installed
-- Domain name (optional, for webhooks)
-
-**Installation:**
 ```bash
-# Pull n8n Docker image
-docker pull n8nio/n8n
+# Check all services running
+docker ps
 
-# Run n8n
-docker run -it --rm \
-  --name n8n \
-  -p 5678:5678 \
-  -v ~/.n8n:/home/node/.n8n \
-  n8nio/n8n
+# Check n8n logs
+docker logs n8n --tail 50
 
-# Access at http://localhost:5678
+# Check Ollama logs
+docker logs ollama --tail 50
 ```
 
-**Setup Integrations:**
-- Same process as Make.com
-- Use n8n credentials system
-- Create workflows (called "workflows" not "scenarios")
+### Weekly Maintenance
 
-**Advantages over Make.com:**
-- Unlimited operations
-- Full JavaScript support
-- Can run locally (test without internet)
-- Better for complex logic
+```bash
+# Backup PostgreSQL
+docker exec postgres pg_dump -U postgres social_automation > ~/backups/social_automation_$(date +%Y%m%d).sql
 
-**Disadvantages:**
-- Need to manage server uptime
-- Need to handle backups
-- More complex setup
+# Export n8n workflows (from UI)
+# n8n → Workflows → Select all → Export
+```
+
+### Troubleshooting
+
+**Ollama slow or timeout:**
+```bash
+# Check resources
+docker stats
+
+# Restart Ollama
+docker restart ollama
+
+# Check model loaded
+docker exec ollama ollama list
+```
+
+**n8n workflow fails:**
+- Check execution logs in n8n UI
+- Verify PostgreSQL connection
+- Test Ollama endpoint:
+  ```bash
+  curl http://localhost:11434/api/generate -d '{"model":"llama3.1:8b","prompt":"test"}'
+  ```
+
+**PostgreSQL connection issues:**
+```bash
+# Check container
+docker logs postgres
+
+# Test connection
+docker exec -it postgres psql -U postgres -c "SELECT 1;"
+```
 
 ---
 
-## 📚 Resources
+## ☁️ Part 6: Cloud Alternative (Make.com)
 
-### Documentation
-- Make.com: https://www.make.com/en/help
-- n8n: https://docs.n8n.io
-- Claude API: https://docs.anthropic.com
-- Notion API: https://developers.notion.com
-- Meta Graph API: https://developers.facebook.com/docs/graph-api
+**When to consider Make.com instead:**
+- Don't want to manage Docker
+- Need 99.9% uptime guarantee
+- Team collaboration features
+- Faster setup (15 mins vs 2-4 hours)
 
-### Community
-- Make.com Community: https://community.make.com
-- n8n Community: https://community.n8n.io
-- Claude Discord: https://discord.gg/anthropic
+**Make.com Setup (if choosing cloud):**
 
-### Skills Integration
-- Use with: **prompt-engineering.md** for prompt templates
-- Use with: **notion-database.md** for database schemas
-- Use with: **content-templates.md** for content structure
+1. Sign up at make.com (free tier: 1000 ops/month)
+2. Add integrations:
+   - Notion (for content queue instead of PostgreSQL)
+   - HTTP module (for Claude API)
+   - Telegram
+   - Facebook Pages
+
+3. Cost: $9-29/month
+
+**Recommendation:** Start with local setup (free), migrate to cloud later if needed.
 
 ---
 
@@ -529,19 +615,43 @@ docker run -it --rm \
 
 After completing this guide:
 
-- [ ] Make.com/n8n account created
-- [ ] Notion workspace setup with databases
-- [ ] Claude API key configured & tested
-- [ ] Social platform APIs connected (Facebook)
-- [ ] Telegram bot created for notifications
-- [ ] First workflow created & tested
-- [ ] Error handling configured
-- [ ] Monitoring dashboard in Notion
-- [ ] Documentation updated with API keys (in password manager)
-- [ ] Backup workflows exported to `workflows/` folder
+- [ ] Docker installed and running on WSL2
+- [ ] docker-compose.yml created with all services
+- [ ] All containers running (n8n, postgres, ollama)
+- [ ] Llama 3.1 8B model downloaded and tested
+- [ ] PostgreSQL schema created with tables
+- [ ] Sample prompts inserted
+- [ ] n8n accessible at localhost:5678
+- [ ] PostgreSQL credentials added to n8n
+- [ ] First workflow created and tested
+- [ ] Telegram bot configured (optional)
+- [ ] Content generation working end-to-end
+- [ ] Backup strategy documented
 
 ---
 
-**Last Updated:** 2026-03-13
-**Version:** 1.0.0
-**Author:** VictorAurelius + Claude Sonnet 4.5
+## 📚 Related Skills
+
+- **prompt-engineering.md** - AI prompt best practices
+- **content-templates.md** - Content structure templates
+- **analytics-tracking.md** - Metrics and optimization
+
+---
+
+## 🔗 Resources
+
+### Documentation
+- n8n: https://docs.n8n.io
+- Ollama: https://ollama.ai/docs
+- PostgreSQL: https://www.postgresql.org/docs
+- Meta Graph API: https://developers.facebook.com/docs/graph-api
+
+### Community
+- n8n Community: https://community.n8n.io
+- Ollama GitHub: https://github.com/ollama/ollama
+
+---
+
+**Last Updated:** 2026-03-16
+**Version:** 2.0.0
+**Author:** VictorAurelius + Claude

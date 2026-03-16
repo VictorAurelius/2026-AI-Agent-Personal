@@ -82,18 +82,38 @@ Dự án này cung cấp các chiến lược chi tiết và workflow automation
 
 ## 🛠️ Tech Stack
 
-### Core Components
+### Core Components (100% Local - $0/month)
 
 | Category | Tool | Purpose | Cost |
 |----------|------|---------|------|
-| **Orchestration** | Make.com / n8n | Workflow automation | $9-15/mo |
-| **AI Engine** | Claude API (Anthropic) | Content generation | $10-20/mo |
-| **Storage** | Notion | Content queue & metrics | Free |
-| **Design** | Canva Pro | Visual creation | $13/mo |
+| **Orchestration** | n8n (self-hosted WSL) | Workflow automation | $0 |
+| **AI Engine** | Ollama + Llama 3.1 8B | Content generation | $0 |
+| **Database** | PostgreSQL (local) | Content queue & metrics | $0 |
+| **Design** | Canva Free | Visual creation | $0 |
 | **Publishing** | Meta Graph API, LinkedIn API | Auto-posting | Free |
 | **Notifications** | Telegram Bot | Alerts | Free |
 
-**Total**: ~$32-50/month
+**Total**: **$0/month** (hoàn toàn miễn phí)
+
+### Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│  MÁY CHỦ LOCAL 32GB (WSL2)                      │
+├─────────────────────────────────────────────────┤
+│  Docker Compose:                                │
+│  ┌────────┐ ┌────────────┐ ┌─────────────────┐ │
+│  │  n8n   │ │ PostgreSQL │ │ Ollama          │ │
+│  │ :5678  │ │   :5432    │ │ Llama 3.1 8B    │ │
+│  └────────┘ └────────────┘ └─────────────────┘ │
+└─────────────────────────────────────────────────┘
+         ↓
+   ┌───────────┐
+   │ Facebook  │
+   │ LinkedIn  │
+   │ Telegram  │
+   └───────────┘
+```
 
 Chi tiết: [`documents/tech-stack/overview.md`](./documents/tech-stack/overview.md)
 
@@ -120,18 +140,18 @@ Bắt đầu với [`documents/README.md`](./documents/README.md) để hiểu t
 
 ### 3. Setup Tools (Week 1-2)
 
-**Week 1: Accounts**
-- [ ] Đăng ký Make.com hoặc n8n
-- [ ] Tạo Claude API account
-- [ ] Setup Notion workspace
-- [ ] Tạo Canva account
+**Week 1: Local Infrastructure**
+- [ ] Cài đặt Docker trên WSL2
+- [ ] Setup n8n + PostgreSQL + Ollama via Docker Compose
+- [ ] Pull Llama 3.1 8B model
+- [ ] Tạo Canva account (free)
 - [ ] Setup Telegram bot
 
 **Week 2: Integration**
-- [ ] Kết nối Make.com với các services
+- [ ] Kết nối n8n với Ollama API (localhost)
 - [ ] Test workflows cơ bản
 - [ ] Tạo content templates trong Canva
-- [ ] Setup Notion databases
+- [ ] Setup PostgreSQL databases
 
 ### 4. Triển khai (Week 3+)
 
@@ -181,7 +201,7 @@ Bắt đầu với [`documents/README.md`](./documents/README.md) để hiểu t
 ### For All Platforms:
 - [ ] Comfortable với automation tools (hoặc sẵn sàng học)
 - [ ] 10-15 giờ/tuần trong 3 tháng đầu
-- [ ] Budget ~$30-50/tháng cho tools
+- [ ] Máy tính 32GB RAM + WSL2 (đã có)
 - [ ] Kiên nhẫn (growth chậm 3-6 tháng đầu)
 
 ### Platform-Specific:
@@ -225,7 +245,7 @@ Dự án này sử dụng **Claude Skills** để standardize workflows và best
 **📋 Complete Index:** [.claude/skills/SKILLS-INDEX.md](./.claude/skills/SKILLS-INDEX.md)
 
 **Core Skills:**
-- 🔧 [Automation Setup](./.claude/skills/automation-setup.md) - Make.com/n8n setup guide
+- 🔧 [Automation Setup](./.claude/skills/automation-setup.md) - n8n + Ollama local setup guide
 - 📝 [Content Templates](./.claude/skills/content-templates.md) - Reusable templates for all platforms
 - 🤖 [Prompt Engineering](./.claude/skills/prompt-engineering.md) - AI prompt best practices
 - 🗄️ [Notion Database](./.claude/skills/notion-database.md) - Database schemas & setup
@@ -342,7 +362,7 @@ MIT License - Free to use and modify for personal/commercial projects.
 
 ---
 
-**Last updated**: 2026-03-13
+**Last updated**: 2026-03-16
 **Version**: 1.0
 **Status**: Planning & Documentation Complete ✅
 
