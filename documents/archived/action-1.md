@@ -34,3 +34,11 @@ nó điều hướng tôi đến http://localhost:5678/setup luôn
 tất cả những bước này không tạo thành script tự động được sao?
 
 Click Credentials (icon chìa khóa bên trái) => không tìm thấy ở http://localhost:5678/home/workflows
+
+làm sao để tìm bot father?
+
+rule là gì?
+
+Base URL của tele creden là gì?
+
+commit và tuân thủ quy trình fix của superpowers
