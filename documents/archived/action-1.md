@@ -22,3 +22,13 @@ hãy tạo plan để:
 2. loại bỏ những file thực sự sẽ không dùng đến trong tương lai
 3. học tập và bổ sung skill, hoành thiện quy trình cho dự án này
 4. đặt lên tên cho dự án
+
+đọc tài liệu để hiểu về dự án
+
+tôi đã mở docker desktop, giúp tôi chạy task 1.5
+
+lỗi gì trong quá trình setup thì sửa script, rule của dự án là không chạy thẳng lệnh docker, phải qua script, lưu vào memory
+
+nó điều hướng tôi đến http://localhost:5678/setup luôn
+
+tất cả những bước này không tạo thành script tự động được sao?
