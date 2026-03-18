@@ -1,0 +1,156 @@
+{
+  "name": "WF2: Batch Generate",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {"field": "cronExpression", "expression": "0 8 * * 1,3,5"}
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Mon/Wed/Fri 8AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, topic, pillar, notes FROM topic_ideas WHERE used = false ORDER BY priority ASC LIMIT 3"
+      },
+      "id": "get-topics",
+      "name": "Get Topics",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [440, 300],
+      "credentials": {
+        "postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "loop-topics",
+      "name": "Loop Topics",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT system_prompt, user_prompt_template FROM prompts WHERE pillar = '{{ $json.pillar }}' AND is_active = true LIMIT 1"
+      },
+      "id": "get-prompt",
+      "name": "Get Prompt",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [840, 300],
+      "credentials": {
+        "postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const topic = $('Loop Topics').first().json;\nconst prompt = $input.first().json;\n\nlet userPrompt = prompt.user_prompt_template;\nuserPrompt = userPrompt.replace('{{topic}}', topic.topic);\nuserPrompt = userPrompt.replace('{{context}}', topic.notes || '');\n\nreturn [{\n  json: {\n    topic_id: topic.id,\n    system_prompt: prompt.system_prompt,\n    user_prompt: userPrompt,\n    topic: topic.topic,\n    pillar: topic.pillar\n  }\n}];"
+      },
+      "id": "prepare",
+      "name": "Prepare",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1040, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.1:8b\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"{{ $json.system_prompt }}\"},\n    {\"role\": \"user\", \"content\": \"{{ $json.user_prompt }}\"}\n  ],\n  \"stream\": false\n}",
+        "options": {"timeout": 120000}
+      },
+      "id": "generate",
+      "name": "Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO content_queue (title, platform, pillar, content_type, generated_content, status) VALUES ('{{ $('Prepare').first().json.topic }}', 'linkedin', '{{ $('Prepare').first().json.pillar }}', 'thought_leadership', '{{ $json.message.content }}', 'pending_review')"
+      },
+      "id": "save-content",
+      "name": "Save Content",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1440, 300],
+      "credentials": {
+        "postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE topic_ideas SET used = true WHERE id = {{ $('Prepare').first().json.topic_id }}"
+      },
+      "id": "mark-used",
+      "name": "Mark Used",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1640, 300],
+      "credentials": {
+        "postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "wait",
+      "name": "Wait 30s",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [1840, 300]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "=\ud83d\udce6 *Batch Generation Complete*\n\n\u2705 Generated posts from topic queue\n\ud83d\udccb Status: Pending Review\n\n_Review at:_ http://localhost:5678",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "summary",
+      "name": "Send Summary",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [840, 500],
+      "credentials": {
+        "telegramApi": {"id": "1", "name": "Telegram Bot"}
+      }
+    }
+  ],
+  "connections": {
+    "Mon/Wed/Fri 8AM": {"main": [[{"node": "Get Topics", "type": "main", "index": 0}]]},
+    "Get Topics": {"main": [[{"node": "Loop Topics", "type": "main", "index": 0}]]},
+    "Loop Topics": {
+      "main": [
+        [{"node": "Get Prompt", "type": "main", "index": 0}],
+        [{"node": "Send Summary", "type": "main", "index": 0}]
+      ]
+    },
+    "Get Prompt": {"main": [[{"node": "Prepare", "type": "main", "index": 0}]]},
+    "Prepare": {"main": [[{"node": "Generate", "type": "main", "index": 0}]]},
+    "Generate": {"main": [[{"node": "Save Content", "type": "main", "index": 0}]]},
+    "Save Content": {"main": [[{"node": "Mark Used", "type": "main", "index": 0}]]},
+    "Mark Used": {"main": [[{"node": "Wait 30s", "type": "main", "index": 0}]]},
+    "Wait 30s": {"main": [[{"node": "Loop Topics", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1"},
+  "tags": [{"name": "content"}, {"name": "batch"}]
+}
