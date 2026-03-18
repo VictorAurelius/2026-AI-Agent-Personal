@@ -42,3 +42,5 @@ rule là gì?
 Base URL của tele creden là gì?
 
 commit và tuân thủ quy trình fix của superpowers
+
+fix theo đúng chuẩn của superpowers
