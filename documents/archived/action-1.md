@@ -44,3 +44,5 @@ Base URL của tele creden là gì?
 commit và tuân thủ quy trình fix của superpowers
 
 tôi chưa hài lòng với quy trình fix này, mỗi lần fix hoặc feature phải tạo branch, fix, tạo pull request, cập nhật lại skill
+
+fix theo đúng chuẩn của superpowers

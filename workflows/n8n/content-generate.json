@@ -75,7 +75,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const ollamaResponse = $input.first().json;\nconst preparedData = $('Prepare Prompt').first().json;\n\nconst content = ollamaResponse.message?.content || 'Generation failed - no content returned';\n\nreturn [{\n  json: {\n    title: preparedData.topic,\n    platform: 'linkedin',\n    pillar: preparedData.pillar,\n    content_type: preparedData.content_type,\n    generated_content: content,\n    status: 'pending_review'\n  }\n}];"
+        "jsCode": "// SQL escape helper function\nfunction escapeSql(str) {\n  if (!str) return '';\n  return str.replace(/'/g, \"''\");\n}\n\nconst ollamaResponse = $input.first().json;\nconst preparedData = $('Prepare Prompt').first().json;\n\nconst content = ollamaResponse.message?.content || 'Generation failed - no content returned';\n\nreturn [{\n  json: {\n    title: escapeSql(preparedData.topic),\n    platform: escapeSql('linkedin'),\n    pillar: escapeSql(preparedData.pillar),\n    content_type: escapeSql(preparedData.content_type),\n    generated_content: escapeSql(content),\n    status: escapeSql('pending_review')\n  }\n}];"
       },
       "id": "parse-response",
       "name": "Parse Response",
