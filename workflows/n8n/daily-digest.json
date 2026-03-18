@@ -1,0 +1,77 @@
+{
+  "name": "WF3: Daily Digest",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "cronExpression", "expression": "0 9 * * *"}]
+        }
+      },
+      "id": "daily-9am",
+      "name": "Daily 9AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 380]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT status, COUNT(*) as count FROM content_queue GROUP BY status ORDER BY status"
+      },
+      "id": "get-stats",
+      "name": "Get Stats",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [480, 280],
+      "credentials": {"postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}}
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, title, pillar, created_at FROM content_queue WHERE status = 'pending_review' ORDER BY created_at DESC LIMIT 5"
+      },
+      "id": "get-pending",
+      "name": "Get Pending",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [480, 480],
+      "credentials": {"postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}}
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const stats = $('Get Stats').all().map(i => i.json);\nconst pending = $('Get Pending').all().map(i => i.json);\n\nconst statusCounts = {};\nstats.forEach(s => { statusCounts[s.status] = parseInt(s.count); });\n\nconst today = new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });\n\nlet message = `\ud83d\udcca *Daily Digest - ${today}*\\n\\n`;\nmessage += `\ud83d\udccb *Content Status:*\\n`;\nmessage += `\u2022 Draft: ${statusCounts.draft || 0}\\n`;\nmessage += `\u2022 Generating: ${statusCounts.generating || 0}\\n`;\nmessage += `\u2022 \u23f3 Pending Review: ${statusCounts.pending_review || 0}\\n`;\nmessage += `\u2022 \u2705 Approved: ${statusCounts.approved || 0}\\n`;\nmessage += `\u2022 \ud83d\udcc5 Scheduled: ${statusCounts.scheduled || 0}\\n`;\nmessage += `\u2022 \ud83d\ude80 Published: ${statusCounts.published || 0}\\n`;\nmessage += `\u2022 \u274c Rejected: ${statusCounts.rejected || 0}\\n`;\n\nif (pending.length > 0) {\n  message += `\\n\ud83d\udcdd *Pending Review:*\\n`;\n  pending.forEach((p, i) => {\n    message += `${i + 1}. ${p.title} _(${p.pillar})_\\n`;\n  });\n} else {\n  message += `\\n\u2705 No items pending review.\\n`;\n}\n\nmessage += `\\n_Review at:_ http://localhost:5678`;\n\nreturn [{ json: { message } }];"
+      },
+      "id": "format-message",
+      "name": "Format Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 380]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "send-digest",
+      "name": "Send Digest",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [960, 380],
+      "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
+    }
+  ],
+  "connections": {
+    "Daily 9AM": {"main": [[
+      {"node": "Get Stats", "type": "main", "index": 0},
+      {"node": "Get Pending", "type": "main", "index": 0}
+    ]]},
+    "Get Stats": {"main": [[{"node": "Format Message", "type": "main", "index": 0}]]},
+    "Get Pending": {"main": [[{"node": "Format Message", "type": "main", "index": 0}]]},
+    "Format Message": {"main": [[{"node": "Send Digest", "type": "main", "index": 0}]]}
+  },
+  "settings": {"executionOrder": "v1"},
+  "tags": [{"name": "notification"}, {"name": "daily"}]
+}
