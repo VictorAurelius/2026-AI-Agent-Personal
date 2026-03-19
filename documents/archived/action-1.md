@@ -58,3 +58,7 @@ hình ảnh họ dùng là định dạng gì, sao lại có chuyển động ha
 có vẻ nó là dạng gif
 
 tạo 2 PR PDE và Image luôn theo chuẩn superpower
+
+check trạng thái để biết dự án đã được phát triển thêm các PR mới
+
+hãy giúp tôi triển khai hết workflow vào n8n để test
