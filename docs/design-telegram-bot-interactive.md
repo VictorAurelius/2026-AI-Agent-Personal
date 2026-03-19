@@ -21,9 +21,9 @@ HIỆN TẠI (1 chiều):
 ### Lệnh tạo nội dung
 | Lệnh | Mô tả | Ví dụ |
 |-------|--------|-------|
-| `/generate <topic>` | Tạo 1 bài viết LinkedIn | `/generate AI tools cho developers` |
-| `/generate_fb <topic>` | Tạo bài Facebook Tech | `/generate_fb Docker containers explained` |
-| `/batch` | Trigger batch generate ngay | `/batch` |
+| `/generate <topic>` | Tạo 1 bài viết LinkedIn (Ollama -> DB -> Reply) | `/generate AI tools cho developers` |
+| `/suggest` | AI gợi ý 5 topic ideas | `/suggest` |
+| `/addtopic <topic>\|<pillar>\|<priority>` | Thêm topic mới vào DB | `/addtopic AI trends\|tech_insights\|3` |
 
 ### Lệnh quản lý nội dung
 | Lệnh | Mô tả | Ví dụ |
@@ -38,13 +38,19 @@ HIỆN TẠI (1 chiều):
 | Lệnh | Mô tả | Ví dụ |
 |-------|--------|-------|
 | `/topics` | Xem topics chưa dùng | `/topics` |
-| `/addtopic <topic>\|<pillar>\|<priority>` | Thêm topic mới | `/addtopic AI trends\|tech_insights\|3` |
+
+### Lệnh đăng bài
+| Lệnh | Mô tả | Ví dụ |
+|-------|--------|-------|
+| `/post_linkedin` | Lấy bài LinkedIn approved để copy-paste đăng | `/post_linkedin` |
+| `/post_fb` | Lấy bài Facebook approved | `/post_fb` |
+| `/published <id> <url>` | Cập nhật trạng thái đã đăng + URL | `/published 15 https://linkedin.com/post/123` |
 
 ### Lệnh hệ thống
 | Lệnh | Mô tả |
 |-------|--------|
-| `/health` | Kiểm tra sức khỏe hệ thống |
-| `/help` | Hiển thị danh sách lệnh |
+| `/health` | Kiểm tra Ollama + PostgreSQL status |
+| `/help` | Hiển thị danh sách lệnh (15 commands) |
 
 ## Workflow mới: WF6 Telegram Bot
 
@@ -59,16 +65,21 @@ HIỆN TẠI (1 chiều):
        ▼
 [Switch/Router] ── Phân loại lệnh
        │
-       ├── /generate → [Get Prompt] → [Ollama] → [Save DB] → [Reply]
+       ├── /help → [Reply Help Text]
        ├── /status → [Query Stats] → [Format] → [Reply]
        ├── /pending → [Query Pending] → [Format] → [Reply]
        ├── /view → [Query Content] → [Format] → [Reply]
        ├── /approve → [Update Status] → [Reply]
-       ├── /reject → [Update Status] → [Reply]
+       ├── /reject → [Prepare Reject] → [Do Reject] → [Reply]
+       ├── /generate → [Get Prompt] → [Prepare Prompt] → [Ollama] → [Parse+Save] → [Save DB] → [Reply]
        ├── /topics → [Query Topics] → [Format] → [Reply]
-       ├── /addtopic → [Insert Topic] → [Reply]
-       ├── /health → [Check Services] → [Reply]
-       └── /help → [Reply Help Text]
+       ├── /health → [Check Ollama] → [Check Postgres] → [Evaluate] → [Reply]
+       ├── /addtopic → [Parse Args] → [INSERT topic_ideas] → [Reply]
+       ├── /published → [Parse Args] → [UPDATE content_queue] → [Reply]
+       ├── /suggest → [Call Ollama] → [Format] → [Reply]
+       ├── /post_fb → [Get FB Content] → [Format] → [Reply]
+       ├── /post_linkedin → [Get LI Content] → [Format] → [Reply]
+       └── fallback → [Reply Help Text]
 ```
 
 ### Chi tiết kỹ thuật
@@ -160,16 +171,18 @@ Dùng `/pending` để xem chi tiết bài chờ review.
 ### BotFather Commands Setup
 ```
 generate - Tạo bài viết LinkedIn từ chủ đề
-generate_fb - Tạo bài viết Facebook từ chủ đề
-batch - Chạy batch generate ngay
+suggest - AI gợi ý 5 topic ideas
+addtopic - Thêm topic mới (topic|pillar|priority)
 status - Xem thống kê content queue
 pending - Liệt kê bài chờ review
 view - Xem nội dung đầy đủ (dùng: /view ID)
 approve - Duyệt bài viết (dùng: /approve ID)
 reject - Từ chối bài (dùng: /reject ID lý do)
 topics - Xem danh sách topics chưa dùng
-addtopic - Thêm topic mới
-health - Kiểm tra sức khỏe hệ thống
+post_linkedin - Lấy bài LinkedIn approved để đăng
+post_fb - Lấy bài Facebook approved
+published - Cập nhật đã đăng (dùng: /published ID URL)
+health - Kiểm tra Ollama + PostgreSQL
 help - Hiển thị trợ giúp
 ```
 
@@ -178,13 +191,16 @@ help - Hiển thị trợ giúp
 - Reject mọi message từ chat_id khác
 - Log tất cả commands vào workflow_logs
 
-## Ưu tiên triển khai
+## Trạng thái triển khai
 
-### Phase 1 (MVP):
-- `/generate`, `/status`, `/pending`, `/help`
+Tất cả 15 commands đã được implement trong `workflows/n8n/telegram-bot.json`:
 
-### Phase 2:
-- `/view`, `/approve`, `/reject`
-
-### Phase 3:
-- `/topics`, `/addtopic`, `/health`, `/batch`
+- `/help`, `/status`, `/pending`, `/view`, `/approve`, `/reject` - Core commands
+- `/generate` - Full Ollama integration (prompt -> generate -> save -> reply)
+- `/topics` - Query unused topics
+- `/health` - Check Ollama + PostgreSQL status
+- `/addtopic` - Parse topic|pillar|priority and INSERT
+- `/published` - Mark content as published with URL
+- `/suggest` - AI-powered topic idea generation
+- `/post_linkedin` - Get approved LinkedIn content for copy-paste
+- `/post_fb` - Get approved Facebook content
