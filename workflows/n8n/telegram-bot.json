@@ -38,7 +38,13 @@
             {"outputKey": "reject", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "reject", "operator": {"type": "string", "operation": "equals"}}]}},
             {"outputKey": "generate", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "generate", "operator": {"type": "string", "operation": "equals"}}]}},
             {"outputKey": "topics", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "topics", "operator": {"type": "string", "operation": "equals"}}]}},
-            {"outputKey": "health", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "health", "operator": {"type": "string", "operation": "equals"}}]}}
+            {"outputKey": "health", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "health", "operator": {"type": "string", "operation": "equals"}}]}},
+            {"outputKey": "addtopic", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "addtopic", "operator": {"type": "string", "operation": "equals"}}]}},
+            {"outputKey": "published", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "published", "operator": {"type": "string", "operation": "equals"}}]}},
+            {"outputKey": "suggest", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "suggest", "operator": {"type": "string", "operation": "equals"}}]}},
+            {"outputKey": "suggest_ideas", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "suggest_ideas", "operator": {"type": "string", "operation": "equals"}}]}},
+            {"outputKey": "post_fb", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "post_fb", "operator": {"type": "string", "operation": "equals"}}]}},
+            {"outputKey": "post_linkedin", "conditions": {"conditions": [{"leftValue": "={{ $json.command }}", "rightValue": "post_linkedin", "operator": {"type": "string", "operation": "equals"}}]}}
           ],
           "fallbackOutput": "help"
         }
@@ -53,7 +59,7 @@
       "parameters": {
         "operation": "sendMessage",
         "chatId": "={{ $('Extract Command').first().json.chatId }}",
-        "text": "=🤖 *AI Agent Bot - Trợ giúp*\n\n📝 *Tạo nội dung:*\n/generate <chủ đề> - Tạo bài LinkedIn\n/batch - Chạy batch generate\n\n📋 *Quản lý nội dung:*\n/status - Thống kê content queue\n/pending - Bài chờ review\n/view <id> - Xem nội dung đầy đủ\n/approve <id> - Duyệt bài\n/reject <id> <lý do> - Từ chối bài\n\n📌 *Topics:*\n/topics - Xem topics chưa dùng\n\n🔧 *Hệ thống:*\n/health - Kiểm tra services\n/help - Hiển thị trợ giúp này",
+        "text": "=\ud83e\udd16 *AI Agent Bot - Tr\u1ee3 gi\u00fap*\n\n\ud83d\udcdd *T\u1ea1o n\u1ed9i dung:*\n/generate <ch\u1ee7 \u0111\u1ec1> - T\u1ea1o b\u00e0i LinkedIn\n/suggest - AI g\u1ee3i \u00fd 5 topic ideas\n/addtopic <topic>|<pillar>|<priority> - Th\u00eam topic\n\n\ud83d\udccb *Qu\u1ea3n l\u00fd n\u1ed9i dung:*\n/status - Th\u1ed1ng k\u00ea content queue\n/pending - B\u00e0i ch\u1edd review\n/view <id> - Xem n\u1ed9i dung \u0111\u1ea7y \u0111\u1ee7\n/approve <id> - Duy\u1ec7t b\u00e0i\n/reject <id> <l\u00fd do> - T\u1eeb ch\u1ed1i b\u00e0i\n\n\ud83d\udccc *Topics:*\n/topics - Xem topics ch\u01b0a d\u00f9ng\n\n\ud83d\ude80 *\u0110\u0103ng b\u00e0i:*\n/post\\_linkedin - L\u1ea5y b\u00e0i LI approved \u0111\u1ec3 \u0111\u0103ng\n/post\\_fb - L\u1ea5y b\u00e0i FB approved\n/published <id> <url> - C\u1eadp nh\u1eadt \u0111\u00e3 \u0111\u0103ng\n\n\ud83d\udd27 *H\u1ec7 th\u1ed1ng:*\n/health - Ki\u1ec3m tra services\n/help - Hi\u1ec3n th\u1ecb tr\u1ee3 gi\u00fap",
         "additionalFields": {"parse_mode": "Markdown"}
       },
       "id": "reply-help",
@@ -78,7 +84,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const stats = $input.all().map(i => i.json);\nconst counts = {};\nstats.forEach(s => { counts[s.status] = parseInt(s.count); });\n\nlet msg = '📊 *Content Queue Status*\\n\\n';\nmsg += `• Draft: ${counts.draft || 0}\\n`;\nmsg += `• ⏳ Pending Review: ${counts.pending_review || 0}\\n`;\nmsg += `• ✅ Approved: ${counts.approved || 0}\\n`;\nmsg += `• 📅 Scheduled: ${counts.scheduled || 0}\\n`;\nmsg += `• 🚀 Published: ${counts.published || 0}\\n`;\nmsg += `• ❌ Rejected: ${counts.rejected || 0}\\n`;\n\nconst total = Object.values(counts).reduce((a, b) => a + b, 0);\nmsg += `\\n📈 Total: ${total} bài`;\nmsg += `\\n\\nDùng /pending để xem chi tiết bài chờ review.`;\n\nreturn [{ json: { message: msg } }];"
+        "jsCode": "const stats = $input.all().map(i => i.json);\nconst counts = {};\nstats.forEach(s => { counts[s.status] = parseInt(s.count); });\n\nlet msg = '\ud83d\udcca *Content Queue Status*\\n\\n';\nmsg += `\u2022 Draft: ${counts.draft || 0}\\n`;\nmsg += `\u2022 \u23f3 Pending Review: ${counts.pending_review || 0}\\n`;\nmsg += `\u2022 \u2705 Approved: ${counts.approved || 0}\\n`;\nmsg += `\u2022 \ud83d\udcc5 Scheduled: ${counts.scheduled || 0}\\n`;\nmsg += `\u2022 \ud83d\ude80 Published: ${counts.published || 0}\\n`;\nmsg += `\u2022 \u274c Rejected: ${counts.rejected || 0}\\n`;\n\nconst total = Object.values(counts).reduce((a, b) => a + b, 0);\nmsg += `\\n\ud83d\udcc8 Total: ${total} b\u00e0i`;\nmsg += `\\n\\nD\u00f9ng /pending \u0111\u1ec3 xem chi ti\u1ebft b\u00e0i ch\u1edd review.`;\n\nreturn [{ json: { message: msg } }];"
       },
       "id": "format-status",
       "name": "Format Status",
@@ -115,7 +121,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all().map(i => i.json);\n\nlet msg = '📝 *Bài chờ Review*\\n\\n';\n\nif (items.length === 0) {\n  msg += '✅ Không có bài nào chờ review!';\n} else {\n  items.forEach((item, i) => {\n    msg += `${i+1}. *#${item.id}* ${item.title}\\n`;\n    msg += `   📌 ${item.pillar} | 📅 ${item.created}\\n\\n`;\n  });\n  msg += `Dùng /view <id> để xem nội dung đầy đủ.`;\n}\n\nreturn [{ json: { message: msg } }];"
+        "jsCode": "const items = $input.all().map(i => i.json);\n\nlet msg = '\ud83d\udcdd *B\u00e0i ch\u1edd Review*\\n\\n';\n\nif (items.length === 0) {\n  msg += '\u2705 Kh\u00f4ng c\u00f3 b\u00e0i n\u00e0o ch\u1edd review!';\n} else {\n  items.forEach((item, i) => {\n    msg += `${i+1}. *#${item.id}* ${item.title}\\n`;\n    msg += `   \ud83d\udccc ${item.pillar} | \ud83d\udcc5 ${item.created}\\n\\n`;\n  });\n  msg += `D\u00f9ng /view <id> \u0111\u1ec3 xem n\u1ed9i dung \u0111\u1ea7y \u0111\u1ee7.`;\n}\n\nreturn [{ json: { message: msg } }];"
       },
       "id": "format-pending",
       "name": "Format Pending",
@@ -152,7 +158,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const item = $input.first().json;\nlet msg;\n\nif (!item || !item.id) {\n  msg = '❌ Không tìm thấy bài viết. Dùng: /view <id>';\n} else {\n  msg = `📄 *Content #${item.id}*\\n\\n`;\n  msg += `*Title:* ${item.title}\\n`;\n  msg += `*Platform:* ${item.platform}\\n`;\n  msg += `*Pillar:* ${item.pillar}\\n`;\n  msg += `*Status:* ${item.status}\\n`;\n  msg += `*Created:* ${item.created}\\n\\n`;\n  msg += `---\\n\\n`;\n  \n  // Telegram has 4096 char limit\n  const content = item.generated_content || 'Không có nội dung';\n  if (content.length > 3000) {\n    msg += content.substring(0, 3000) + '\\n\\n_(Nội dung bị cắt do giới hạn Telegram)_';\n  } else {\n    msg += content;\n  }\n  \n  msg += `\\n\\n---\\n`;\n  if (item.status === 'pending_review') {\n    msg += `✅ /approve ${item.id} | ❌ /reject ${item.id} <lý do>`;\n  }\n}\n\nreturn [{ json: { message: msg } }];"
+        "jsCode": "const item = $input.first().json;\nlet msg;\n\nif (!item || !item.id) {\n  msg = '\u274c Kh\u00f4ng t\u00ecm th\u1ea5y b\u00e0i vi\u1ebft. D\u00f9ng: /view <id>';\n} else {\n  msg = `\ud83d\udcc4 *Content #${item.id}*\\n\\n`;\n  msg += `*Title:* ${item.title}\\n`;\n  msg += `*Platform:* ${item.platform}\\n`;\n  msg += `*Pillar:* ${item.pillar}\\n`;\n  msg += `*Status:* ${item.status}\\n`;\n  msg += `*Created:* ${item.created}\\n\\n`;\n  msg += `---\\n\\n`;\n  \n  // Telegram has 4096 char limit\n  const content = item.generated_content || 'Kh\u00f4ng c\u00f3 n\u1ed9i dung';\n  if (content.length > 3000) {\n    msg += content.substring(0, 3000) + '\\n\\n_(N\u1ed9i dung b\u1ecb c\u1eaft do gi\u1edbi h\u1ea1n Telegram)_';\n  } else {\n    msg += content;\n  }\n  \n  msg += `\\n\\n---\\n`;\n  if (item.status === 'pending_review') {\n    msg += `\u2705 /approve ${item.id} | \u274c /reject ${item.id} <l\u00fd do>`;\n  }\n}\n\nreturn [{ json: { message: msg } }];"
       },
       "id": "format-view",
       "name": "Format View",
@@ -190,7 +196,7 @@
       "parameters": {
         "operation": "sendMessage",
         "chatId": "={{ $('Extract Command').first().json.chatId }}",
-        "text": "=✅ *Đã duyệt!*\n\n#{{ $json.id }} - {{ $json.title }}\n\nStatus: approved",
+        "text": "=\u2705 *\u0110\u00e3 duy\u1ec7t!*\n\n#{{ $json.id }} - {{ $json.title }}\n\nStatus: approved",
         "additionalFields": {"parse_mode": "Markdown"}
       },
       "id": "reply-approve",
@@ -227,7 +233,7 @@
       "parameters": {
         "operation": "sendMessage",
         "chatId": "={{ $('Extract Command').first().json.chatId }}",
-        "text": "=❌ *Đã từ chối!*\n\n#{{ $json.id }} - {{ $json.title }}\n\nLý do: {{ $('Extract Command').first().json.extraArgs || 'Không có' }}",
+        "text": "=\u274c *\u0110\u00e3 t\u1eeb ch\u1ed1i!*\n\n#{{ $json.id }} - {{ $json.title }}\n\nL\u00fd do: {{ $('Extract Command').first().json.extraArgs || 'Kh\u00f4ng c\u00f3' }}",
         "additionalFields": {"parse_mode": "Markdown"}
       },
       "id": "reply-reject",
@@ -240,10 +246,10 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT id, topic, pillar, priority FROM topic_ideas WHERE used = false ORDER BY priority ASC LIMIT 10"
+        "query": "SELECT id, prompt_template, pillar FROM prompts WHERE pillar = 'tech_insights' AND is_active = true LIMIT 1"
       },
-      "id": "query-topics",
-      "name": "Query Topics",
+      "id": "get-prompt",
+      "name": "Get Prompt",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
       "position": [920, 1040],
@@ -252,13 +258,90 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const items = $input.all().map(i => i.json);\nlet msg = '📌 *Topics chưa dùng*\\n\\n';\n\nif (items.length === 0) {\n  msg += '⚠️ Không còn topic nào! Thêm mới bằng /addtopic';\n} else {\n  items.forEach((item, i) => {\n    msg += `${i+1}. *[P${item.priority}]* ${item.topic}\\n`;\n    msg += `   📌 ${item.pillar}\\n\\n`;\n  });\n  msg += `Còn ${items.length} topics.`;\n}\n\nreturn [{ json: { message: msg } }];"
+        "jsCode": "const cmd = $('Extract Command').first().json;\nconst promptRow = $input.first().json;\nconst topic = cmd.args || 'AI tools for developers';\n\nlet prompt = promptRow.prompt_template || 'Write a LinkedIn post about {{topic}}';\nprompt = prompt.replace(/\\{\\{topic\\}\\}/g, topic);\nprompt = prompt.replace(/\\{\\{context\\}\\}/g, '');\n\nreturn [{ json: { prompt, topic, pillar: promptRow.pillar || 'tech_insights' } }];"
+      },
+      "id": "prepare-prompt",
+      "name": "Prepare Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 1040]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama3.1:8b\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a professional LinkedIn content writer for Vietnamese IT professionals. Write in Vietnamese.\"},\n    {\"role\": \"user\", \"content\": \"{{ $json.prompt }}\"}\n  ],\n  \"stream\": false\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "call-ollama-generate",
+      "name": "Call Ollama Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 1040]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "function escapeSql(str) { return str ? str.replace(/'/g, \"''\") : ''; }\n\nconst response = $input.first().json;\nconst promptData = $('Prepare Prompt').first().json;\nconst content = response.message?.content || response.response || 'No content generated';\nconst title = promptData.topic.substring(0, 100);\nconst pillar = promptData.pillar;\n\nconst safeContent = escapeSql(content);\nconst safeTitle = escapeSql(title);\n\nconst query = `INSERT INTO content_queue (title, pillar, platform, generated_content, status, created_at) VALUES ('${safeTitle}', '${pillar}', 'linkedin', '${safeContent}', 'pending_review', NOW()) RETURNING id, title, status`;\n\nreturn [{ json: { query, content, title, pillar } }];"
+      },
+      "id": "parse-save-generate",
+      "name": "Parse and Save",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1520, 1040]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.query }}"
+      },
+      "id": "save-db-generate",
+      "name": "Save to DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1720, 1040],
+      "credentials": {"postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}}
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $('Extract Command').first().json.chatId }}",
+        "text": "=\ud83e\udd16 *Content Generated!*\n\n\ud83d\udccb ID: #{{ $json.id }}\n\ud83d\udccc Pillar: {{ $('Parse and Save').first().json.pillar }}\n\u23f3 Status: pending_review\n\n---\n\n{{ $('Parse and Save').first().json.content }}\n\n---\n\n\u2705 /approve {{ $json.id }} - Duy\u1ec7t\n\u274c /reject {{ $json.id }} <l\u00fd do> - T\u1eeb ch\u1ed1i",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "reply-generate",
+      "name": "Reply Generate",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1920, 1040],
+      "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, topic, pillar, priority FROM topic_ideas WHERE used = false ORDER BY priority ASC LIMIT 10"
+      },
+      "id": "query-topics",
+      "name": "Query Topics",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [920, 1180],
+      "credentials": {"postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}}
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const items = $input.all().map(i => i.json);\nlet msg = '\ud83d\udccc *Topics ch\u01b0a d\u00f9ng*\\n\\n';\n\nif (items.length === 0) {\n  msg += '\u26a0\ufe0f Kh\u00f4ng c\u00f2n topic n\u00e0o! Th\u00eam m\u1edbi b\u1eb1ng /addtopic';\n} else {\n  items.forEach((item, i) => {\n    msg += `${i+1}. *[P${item.priority}]* ${item.topic}\\n`;\n    msg += `   \ud83d\udccc ${item.pillar}\\n\\n`;\n  });\n  msg += `C\u00f2n ${items.length} topics.`;\n}\n\nreturn [{ json: { message: msg } }];"
       },
       "id": "format-topics",
       "name": "Format Topics",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1120, 1040]
+      "position": [1120, 1180]
     },
     {
       "parameters": {
@@ -271,7 +354,278 @@
       "name": "Reply Topics",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1320, 1040],
+      "position": [1320, 1180],
+      "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://ollama:11434/api/tags",
+        "options": {
+          "timeout": 5000
+        }
+      },
+      "id": "check-ollama",
+      "name": "Check Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 1320],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT 1 as health"
+      },
+      "id": "check-postgres",
+      "name": "Check Postgres",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1120, 1320],
+      "credentials": {"postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}},
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const ollamaResult = $('Check Ollama').first().json;\nconst pgResult = $('Check Postgres').first().json;\n\nconst ollamaOk = ollamaResult && ollamaResult.models && !ollamaResult.error;\nconst pgOk = pgResult && pgResult.health === 1 && !pgResult.error;\n\nlet msg = '\ud83d\udd27 *System Health Check*\\n\\n';\nmsg += `\ud83e\udd99 Ollama: ${ollamaOk ? '\u2705 Online' : '\u274c Offline'}\\n`;\nif (ollamaOk && ollamaResult.models) {\n  msg += `   Models: ${ollamaResult.models.map(m => m.name).join(', ')}\\n`;\n}\nmsg += `\ud83d\udc18 PostgreSQL: ${pgOk ? '\u2705 Connected' : '\u274c Disconnected'}\\n`;\nmsg += `\\n\u23f0 Checked at: ${new Date().toISOString()}`;\n\nreturn [{ json: { message: msg } }];"
+      },
+      "id": "evaluate-health",
+      "name": "Evaluate Health",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1320, 1320]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $('Extract Command').first().json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "reply-health",
+      "name": "Reply Health",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1520, 1320],
+      "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "function escapeSql(str) { return str ? str.replace(/'/g, \"''\") : ''; }\n\nconst cmd = $('Extract Command').first().json;\nconst args = cmd.args || '';\nconst parts = args.split('|').map(s => s.trim());\n\nif (parts.length < 2) {\n  return [{ json: { error: true, message: '\u274c Sai format. D\u00f9ng: /addtopic <topic>|<pillar>|<priority>\\n\\nV\u00ed d\u1ee5: /addtopic AI trends|tech_insights|3' } }];\n}\n\nconst topic = escapeSql(parts[0]);\nconst pillar = escapeSql(parts[1]);\nconst priority = parseInt(parts[2]) || 5;\n\nconst query = `INSERT INTO topic_ideas (topic, pillar, priority, used, created_at) VALUES ('${topic}', '${pillar}', ${priority}, false, NOW()) RETURNING id, topic`;\n\nreturn [{ json: { error: false, query, topic, pillar, priority } }];"
+      },
+      "id": "parse-addtopic",
+      "name": "Parse Addtopic",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 1460]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.query }}"
+      },
+      "id": "insert-topic",
+      "name": "Insert Topic",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1120, 1460],
+      "credentials": {"postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}}
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $('Extract Command').first().json.chatId }}",
+        "text": "=\u2705 *\u0110\u00e3 th\u00eam topic!*\n\n\ud83d\udccc #{{ $json.id }} - {{ $json.topic }}\n\nD\u00f9ng /topics \u0111\u1ec3 xem danh s\u00e1ch.",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "reply-addtopic",
+      "name": "Reply Addtopic",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1320, 1460],
+      "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $('Extract Command').first().json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "reply-addtopic-error",
+      "name": "Reply Addtopic Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 1540],
+      "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "function escapeSql(str) { return str ? str.replace(/'/g, \"''\") : ''; }\n\nconst cmd = $('Extract Command').first().json;\nconst contentId = cmd.contentId;\nconst url = escapeSql(cmd.extraArgs || '');\n\nif (!contentId) {\n  return [{ json: { error: true, message: '\u274c D\u00f9ng: /published <id> <url>\\n\\nV\u00ed d\u1ee5: /published 15 https://linkedin.com/post/123' } }];\n}\n\nconst query = `UPDATE content_queue SET status = 'published', post_url = '${url}', published_date = NOW() WHERE id = ${contentId} RETURNING id, title`;\n\nreturn [{ json: { error: false, query, contentId, url } }];"
+      },
+      "id": "parse-published",
+      "name": "Parse Published",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [920, 1660]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "={{ $json.query }}"
+      },
+      "id": "update-published",
+      "name": "Update Published",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1120, 1660],
+      "credentials": {"postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}}
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $('Extract Command').first().json.chatId }}",
+        "text": "=\ud83d\ude80 *\u0110\u00e3 c\u1eadp nh\u1eadt!*\n\n#{{ $json.id }} - {{ $json.title }}\n\nStatus: published\nURL: {{ $('Parse Published').first().json.url || 'N/A' }}",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "reply-published",
+      "name": "Reply Published",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1320, 1660],
+      "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $('Extract Command').first().json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "reply-published-error",
+      "name": "Reply Published Error",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1120, 1740],
+      "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"model\": \"llama3.1:8b\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a social media content strategist for Vietnamese IT professionals.\"},\n    {\"role\": \"user\", \"content\": \"Suggest 5 social media topic ideas for Vietnamese IT professionals. Output as a numbered list in Vietnamese. Each topic should include the content pillar (tech_insights, career_growth, or behind_the_scenes).\"}\n  ],\n  \"stream\": false\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "call-ollama-suggest",
+      "name": "Call Ollama Suggest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [920, 1860]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const response = $input.first().json;\nconst content = response.message?.content || response.response || 'Kh\u00f4ng t\u1ea1o \u0111\u01b0\u1ee3c g\u1ee3i \u00fd';\n\nlet msg = '\ud83d\udca1 *G\u1ee3i \u00fd Topic Ideas*\\n\\n';\nmsg += content;\nmsg += '\\n\\n---\\nD\u00f9ng /addtopic <topic>|<pillar>|<priority> \u0111\u1ec3 th\u00eam topic.';\n\nreturn [{ json: { message: msg } }];"
+      },
+      "id": "format-suggest",
+      "name": "Format Suggest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 1860]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $('Extract Command').first().json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "reply-suggest",
+      "name": "Reply Suggest",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1320, 1860],
+      "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, title, platform, generated_content, pillar FROM content_queue WHERE status = 'approved' AND platform LIKE 'facebook%' ORDER BY created_at ASC LIMIT 1"
+      },
+      "id": "get-fb-content",
+      "name": "Get FB Content",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [920, 2000],
+      "credentials": {"postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}}
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first().json;\nlet msg;\n\nif (!item || !item.id) {\n  msg = '\u26a0\ufe0f Kh\u00f4ng c\u00f3 b\u00e0i Facebook n\u00e0o \u0111\u01b0\u1ee3c approved.\\nD\u00f9ng /pending \u0111\u1ec3 xem b\u00e0i ch\u1edd duy\u1ec7t.';\n} else {\n  msg = `\ud83d\udcf1 *Facebook Post - #${item.id}*\\n\\n`;\n  msg += `*Title:* ${item.title}\\n`;\n  msg += `*Platform:* ${item.platform}\\n`;\n  msg += `*Pillar:* ${item.pillar}\\n\\n`;\n  msg += `---\\n\\n`;\n  \n  const content = item.generated_content || '';\n  if (content.length > 3000) {\n    msg += content.substring(0, 3000) + '\\n\\n_(C\u1eaft b\u1edbt do gi\u1edbi h\u1ea1n Telegram)_';\n  } else {\n    msg += content;\n  }\n  \n  msg += `\\n\\n---\\n`;\n  msg += `\ud83d\ude80 D\u00f9ng WF7 \u0111\u1ec3 auto-post ho\u1eb7c copy th\u1ee7 c\u00f4ng.\\n`;\n  msg += `Sau khi \u0111\u0103ng: /published ${item.id} <url>`;\n}\n\nreturn [{ json: { message: msg } }];"
+      },
+      "id": "format-fb-info",
+      "name": "Format FB Info",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 2000]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $('Extract Command').first().json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "reply-fb-info",
+      "name": "Reply FB Info",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1320, 2000],
+      "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, title, platform, generated_content, pillar FROM content_queue WHERE status = 'approved' AND platform = 'linkedin' ORDER BY created_at ASC LIMIT 1"
+      },
+      "id": "get-li-content",
+      "name": "Get LI Content",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [920, 2140],
+      "credentials": {"postgres": {"id": "1", "name": "PostgreSQL - Social Automation"}}
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first().json;\nlet msg;\n\nif (!item || !item.id) {\n  msg = '\u26a0\ufe0f Kh\u00f4ng c\u00f3 b\u00e0i LinkedIn n\u00e0o \u0111\u01b0\u1ee3c approved.\\nD\u00f9ng /pending \u0111\u1ec3 xem b\u00e0i ch\u1edd duy\u1ec7t.';\n} else {\n  msg = `\ud83d\udcbc *LinkedIn Post - #${item.id}*\\n\\n`;\n  msg += `*Title:* ${item.title}\\n`;\n  msg += `*Pillar:* ${item.pillar}\\n\\n`;\n  msg += `\ud83d\udccb *Copy v\u00e0 paste v\u00e0o LinkedIn:*\\n\\n`;\n  msg += `---\\n\\n`;\n  \n  const content = item.generated_content || '';\n  if (content.length > 3000) {\n    msg += content.substring(0, 3000) + '\\n\\n_(C\u1eaft b\u1edbt do gi\u1edbi h\u1ea1n Telegram)_';\n  } else {\n    msg += content;\n  }\n  \n  msg += `\\n\\n---\\n`;\n  msg += `\\n\ud83d\udcdd *H\u01b0\u1edbng d\u1eabn:*\\n`;\n  msg += `1. Copy n\u1ed9i dung tr\u00ean\\n`;\n  msg += `2. V\u00e0o LinkedIn > Start a post\\n`;\n  msg += `3. Paste v\u00e0 \u0111\u0103ng\\n`;\n  msg += `4. Sau khi \u0111\u0103ng: /published ${item.id} <url>`;\n}\n\nreturn [{ json: { message: msg } }];"
+      },
+      "id": "format-li-post",
+      "name": "Format LI Post",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 2140]
+    },
+    {
+      "parameters": {
+        "operation": "sendMessage",
+        "chatId": "={{ $('Extract Command').first().json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {"parse_mode": "Markdown"}
+      },
+      "id": "reply-li-post",
+      "name": "Reply LI Post",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1320, 2140],
       "credentials": {"telegramApi": {"id": "1", "name": "Telegram Bot"}}
     }
   ],
@@ -286,9 +640,15 @@
         [{"node": "Query View", "type": "main", "index": 0}],
         [{"node": "Do Approve", "type": "main", "index": 0}],
         [{"node": "Prepare Reject", "type": "main", "index": 0}],
-        [{"node": "Reply Help", "type": "main", "index": 0}],
+        [{"node": "Get Prompt", "type": "main", "index": 0}],
         [{"node": "Query Topics", "type": "main", "index": 0}],
-        [{"node": "Reply Help", "type": "main", "index": 0}]
+        [{"node": "Check Ollama", "type": "main", "index": 0}],
+        [{"node": "Parse Addtopic", "type": "main", "index": 0}],
+        [{"node": "Parse Published", "type": "main", "index": 0}],
+        [{"node": "Call Ollama Suggest", "type": "main", "index": 0}],
+        [{"node": "Call Ollama Suggest", "type": "main", "index": 0}],
+        [{"node": "Get FB Content", "type": "main", "index": 0}],
+        [{"node": "Get LI Content", "type": "main", "index": 0}]
       ]
     },
     "Query Status": {"main": [[{"node": "Format Status", "type": "main", "index": 0}]]},
@@ -300,8 +660,26 @@
     "Do Approve": {"main": [[{"node": "Reply Approve", "type": "main", "index": 0}]]},
     "Prepare Reject": {"main": [[{"node": "Do Reject", "type": "main", "index": 0}]]},
     "Do Reject": {"main": [[{"node": "Reply Reject", "type": "main", "index": 0}]]},
+    "Get Prompt": {"main": [[{"node": "Prepare Prompt", "type": "main", "index": 0}]]},
+    "Prepare Prompt": {"main": [[{"node": "Call Ollama Generate", "type": "main", "index": 0}]]},
+    "Call Ollama Generate": {"main": [[{"node": "Parse and Save", "type": "main", "index": 0}]]},
+    "Parse and Save": {"main": [[{"node": "Save to DB", "type": "main", "index": 0}]]},
+    "Save to DB": {"main": [[{"node": "Reply Generate", "type": "main", "index": 0}]]},
     "Query Topics": {"main": [[{"node": "Format Topics", "type": "main", "index": 0}]]},
-    "Format Topics": {"main": [[{"node": "Reply Topics", "type": "main", "index": 0}]]}
+    "Format Topics": {"main": [[{"node": "Reply Topics", "type": "main", "index": 0}]]},
+    "Check Ollama": {"main": [[{"node": "Check Postgres", "type": "main", "index": 0}]]},
+    "Check Postgres": {"main": [[{"node": "Evaluate Health", "type": "main", "index": 0}]]},
+    "Evaluate Health": {"main": [[{"node": "Reply Health", "type": "main", "index": 0}]]},
+    "Parse Addtopic": {"main": [[{"node": "Insert Topic", "type": "main", "index": 0}]]},
+    "Insert Topic": {"main": [[{"node": "Reply Addtopic", "type": "main", "index": 0}]]},
+    "Parse Published": {"main": [[{"node": "Update Published", "type": "main", "index": 0}]]},
+    "Update Published": {"main": [[{"node": "Reply Published", "type": "main", "index": 0}]]},
+    "Call Ollama Suggest": {"main": [[{"node": "Format Suggest", "type": "main", "index": 0}]]},
+    "Format Suggest": {"main": [[{"node": "Reply Suggest", "type": "main", "index": 0}]]},
+    "Get FB Content": {"main": [[{"node": "Format FB Info", "type": "main", "index": 0}]]},
+    "Format FB Info": {"main": [[{"node": "Reply FB Info", "type": "main", "index": 0}]]},
+    "Get LI Content": {"main": [[{"node": "Format LI Post", "type": "main", "index": 0}]]},
+    "Format LI Post": {"main": [[{"node": "Reply LI Post", "type": "main", "index": 0}]]}
   },
   "settings": {"executionOrder": "v1"},
   "tags": [{"name": "telegram"}, {"name": "bot"}, {"name": "interactive"}]
