@@ -1,0 +1,413 @@
+{
+  "name": "WF13 - Data Collector (RSS)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 * * *"
+            }
+          ]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Daily 6AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "url": "=http://postgres:5432",
+        "operation": "executeQuery",
+        "query": "SELECT id, name, url, platform, category FROM rss_feeds WHERE is_active = true"
+      },
+      "id": "get-active-feeds",
+      "name": "Get Active Feeds",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [440, 300],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "fetch-rss",
+      "name": "Fetch RSS Feed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse RSS XML and extract top items\nconst items = [];\nconst feedName = $('Get Active Feeds').item.json.name;\nconst feedPlatform = $('Get Active Feeds').item.json.platform;\nconst feedCategory = $('Get Active Feeds').item.json.category;\nconst xmlData = $input.item.json.data || $input.item.json.body || '';\n\n// Simple XML parsing for RSS items\nconst itemRegex = /<item>(.*?)<\\/item>/gs;\nconst titleRegex = /<title>(?:<\\!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?<\\/title>/;\nconst linkRegex = /<link>(?:<\\!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?<\\/link>/;\nconst descRegex = /<description>(?:<\\!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?<\\/description>/s;\n\nlet match;\nlet count = 0;\nwhile ((match = itemRegex.exec(xmlData)) !== null && count < 5) {\n  const itemXml = match[1];\n  const title = (titleRegex.exec(itemXml) || [])[1] || '';\n  const link = (linkRegex.exec(itemXml) || [])[1] || '';\n  const desc = (descRegex.exec(itemXml) || [])[1] || '';\n  \n  // Strip HTML tags from description\n  const cleanDesc = desc.replace(/<[^>]*>/g, '').trim().substring(0, 500);\n  \n  if (title && link) {\n    items.push({\n      json: {\n        title: title.trim(),\n        link: link.trim(),\n        description: cleanDesc,\n        feed_name: feedName,\n        platform: feedPlatform,\n        category: feedCategory\n      }\n    });\n    count++;\n  }\n}\n\nreturn items.length > 0 ? items : [{ json: { skip: true } }];"
+      },
+      "id": "parse-rss",
+      "name": "Parse RSS Items",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "filter-skip",
+              "leftValue": "={{ $json.skip }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "notEqual"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "filter-valid",
+      "name": "Filter Valid Items",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [1100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT source_url FROM content_queue WHERE source_url = '{{ $json.link }}' LIMIT 1"
+      },
+      "id": "check-duplicate",
+      "name": "Check Duplicate",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1320, 300],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "not-duplicate",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "filter-new",
+      "name": "Only New Items",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [1540, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Select prompt based on platform\nconst item = $('Parse RSS Items').item.json;\nconst platform = item.platform || 'linkedin';\n\nlet promptName = 'rss_linkedin_analysis';\nif (platform.includes('facebook')) {\n  promptName = 'rss_facebook_share';\n}\n\nreturn [{\n  json: {\n    ...item,\n    prompt_name: promptName\n  }\n}];"
+      },
+      "id": "select-prompt",
+      "name": "Select Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1760, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT system_prompt, user_prompt_template FROM prompts WHERE name = '{{ $json.prompt_name }}' LIMIT 1"
+      },
+      "id": "get-prompt",
+      "name": "Get RSS Prompt",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1980, 300],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const prompt = $input.item.json;\nconst item = $('Select Prompt').item.json;\n\nconst systemPrompt = prompt.system_prompt || '';\nlet userPrompt = prompt.user_prompt_template || '';\n\n// Replace template variables\nuserPrompt = userPrompt.replace('{{topic}}', item.title);\nuserPrompt = userPrompt.replace('{{context}}', item.description);\n\nreturn [{\n  json: {\n    system_prompt: systemPrompt,\n    user_prompt: userPrompt,\n    title: item.title,\n    link: item.link,\n    platform: item.platform,\n    category: item.category,\n    feed_name: item.feed_name\n  }\n}];"
+      },
+      "id": "build-prompt",
+      "name": "Build Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2200, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://ollama:11434/api/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"{{ $env.OLLAMA_MODEL || 'llama3.2' }}\",\n  \"prompt\": {{ JSON.stringify($json.user_prompt) }},\n  \"system\": {{ JSON.stringify($json.system_prompt) }},\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 0.7,\n    \"num_predict\": 500\n  }\n}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "ollama-generate",
+      "name": "Ollama Generate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [2420, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO content_queue (platform, content_pillar, content_type, topic, generated_text, source_url, source_title, content_source, status) VALUES ('{{ $('Build Prompt').item.json.platform }}', '{{ $('Build Prompt').item.json.category }}', 'rss_content', '{{ $('Build Prompt').item.json.title.replace(/'/g, \"''\") }}', '{{ $json.response.replace(/'/g, \"''\") }}', '{{ $('Build Prompt').item.json.link }}', '{{ $('Build Prompt').item.json.title.replace(/'/g, \"''\") }}', 'rss', 'pending_review') RETURNING id"
+      },
+      "id": "save-to-db",
+      "name": "Save to DB",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2640, 300],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE rss_feeds SET last_fetched_at = NOW() WHERE url = '{{ $('Parse RSS Items').item.json.link }}'"
+      },
+      "id": "update-feed-timestamp",
+      "name": "Update Feed Timestamp",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [2860, 300],
+      "credentials": {
+        "postgres": {
+          "id": "1",
+          "name": "PostgreSQL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate results for Telegram summary\nconst allItems = $input.all();\nconst count = allItems.length;\n\nconst summaryLines = allItems.map(item => {\n  const title = item.json.title || 'Unknown';\n  const platform = item.json.platform || 'unknown';\n  return `• ${title} (${platform})`;\n}).join('\\n');\n\nconst message = `\\u{1F4F0} Data Collector: ${count} bài RSS content đã tạo\\n\\n${summaryLines}\\n\\n✅ Đã lưu vào content_queue (pending_review)`;\n\nreturn [{ json: { message, count } }];"
+      },
+      "id": "aggregate-results",
+      "name": "Aggregate Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [2860, 520]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $env.TELEGRAM_CHAT_ID }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {}
+      },
+      "id": "telegram-notify",
+      "name": "Telegram Notify",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [3080, 520],
+      "credentials": {
+        "telegramApi": {
+          "id": "1",
+          "name": "Telegram Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 6AM": {
+      "main": [
+        [
+          {
+            "node": "Get Active Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Feeds": {
+      "main": [
+        [
+          {
+            "node": "Fetch RSS Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch RSS Feed": {
+      "main": [
+        [
+          {
+            "node": "Parse RSS Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse RSS Items": {
+      "main": [
+        [
+          {
+            "node": "Filter Valid Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Valid Items": {
+      "main": [
+        [
+          {
+            "node": "Check Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Only New Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Only New Items": {
+      "main": [
+        [
+          {
+            "node": "Select Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Prompt": {
+      "main": [
+        [
+          {
+            "node": "Get RSS Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get RSS Prompt": {
+      "main": [
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prompt": {
+      "main": [
+        [
+          {
+            "node": "Ollama Generate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Generate": {
+      "main": [
+        [
+          {
+            "node": "Save to DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to DB": {
+      "main": [
+        [
+          {
+            "node": "Update Feed Timestamp",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aggregate Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Results": {
+      "main": [
+        [
+          {
+            "node": "Telegram Notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "data-collector"
+    },
+    {
+      "name": "rss"
+    }
+  ]
+}
