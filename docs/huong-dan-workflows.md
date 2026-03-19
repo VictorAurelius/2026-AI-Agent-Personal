@@ -1,4 +1,4 @@
-# Hướng dẫn chi tiết 9 Workflows n8n
+# Hướng dẫn chi tiết 11 Workflows n8n
 
 > Tài liệu giải thích từng workflow trong hệ thống AI Agent Social Automation.
 > Mỗi workflow được mô tả: mục đích, cách hoạt động, từng node, và lưu ý quan trọng.
@@ -18,9 +18,11 @@
 7. [WF8: LinkedIn Post Helper](#wf8-linkedin-post-helper) - Hỗ trợ đăng bài LinkedIn
 8. [WF11: Quiz Generator](#wf11-quiz-generator) - Tạo câu hỏi trắc nghiệm
 9. [WF12: Auto-Comment Scheduler](#wf12-auto-comment-scheduler) - Tự động comment đáp án
-10. [Tổng quan kiến trúc](#tổng-quan-kiến-trúc)
-11. [Lưu ý bảo mật](#lưu-ý-bảo-mật)
-12. [FAQ & Xử lý sự cố](#faq--xử-lý-sự-cố)
+10. [WF13: Data Collector](#wf13-data-collector) - Thu thập RSS feeds
+11. [WF14: Trending Detector](#wf14-trending-detector) - Phát hiện topic trending
+12. [Tổng quan kiến trúc](#tổng-quan-kiến-trúc)
+13. [Lưu ý bảo mật](#lưu-ý-bảo-mật)
+14. [FAQ & Xử lý sự cố](#faq--xử-lý-sự-cố)
 
 ---
 
@@ -1236,15 +1238,104 @@ Sau khi xong, gửi: `/published 26 done`
 
 ---
 
+## WF13: Data Collector
+
+### Mục đích
+
+Thu thập tin tức thực từ RSS feeds (Hacker News, Dev.to, TechCrunch, Reddit, GitHub) và tạo content dựa trên data thật thay vì LLM tự nghĩ.
+
+### Khi nào chạy?
+
+- Tự động mỗi ngày lúc 6:00 AM
+- Lấy tin mới nhất → Ollama phân tích + viết bài → Save vào content queue
+
+### Sơ đồ luồng
+
+```
+[Cron 6AM] → [Get Active Feeds from DB] → [Fetch RSS] → [Parse XML]
+  → [Filter Duplicates] → [Select Top Stories] → [Ollama Generate]
+  → [Save to DB (content_source='rss')] → [Telegram Summary]
+```
+
+### RSS Feeds đã đăng ký
+
+| Nguồn | URL | Platform |
+|-------|-----|----------|
+| Hacker News | hnrss.org/frontpage | LinkedIn |
+| Dev.to | dev.to/feed | FB Tech |
+| TechCrunch | techcrunch.com/feed | LinkedIn |
+| Reddit Programming | reddit.com/r/programming/.rss | FB Tech |
+| GitHub Blog | github.blog/feed | LinkedIn |
+
+### Database mới
+
+- Bảng `rss_feeds`: Registry các RSS feeds
+- Cột `content_source` trong content_queue: 'manual', 'rss', 'trending'
+- Cột `source_url`: Link bài gốc
+- Cột `source_title`: Tiêu đề bài gốc
+
+### Lợi ích
+
+- Content dựa trên tin thật, không generic
+- Luôn có topic mới
+- Source links tăng credibility
+
+---
+
+## WF14: Trending Detector
+
+### Mục đích
+
+Tự động phát hiện topic đang trending bằng cách cross-reference nhiều nguồn. Topic xuất hiện ở 2+ nguồn = trending → auto-add vào topic_ideas.
+
+### Khi nào chạy?
+
+- Tự động mỗi ngày lúc 7:00 AM (sau Data Collector 1 giờ)
+
+### Sơ đồ luồng
+
+```
+[Cron 7AM] → [Fetch HN + Reddit + GitHub (parallel)]
+  → [Extract Keywords] → [Cross-Reference (2+ sources)]
+  → [Filter Existing Topics] → [INSERT topic_ideas (priority=1)]
+  → [Telegram: "🔥 Trending topics detected"]
+```
+
+### Keyword Extraction
+
+- Scan tiêu đề từ 3 nguồn
+- Tìm tech terms: AI, Docker, Kubernetes, React, etc.
+- Đếm tần suất xuất hiện
+
+### Cross-Reference Logic
+
+- Term xuất hiện ở 1 source = bình thường
+- Term xuất hiện ở 2+ sources = TRENDING
+- Auto-add với priority=1 (cao nhất)
+
+### Database
+
+- Bảng `trending_log`: Lưu keywords detected, sources, timestamps
+
+---
+
 ## Tổng quan kiến trúc
 
 ### Mối quan hệ giữa các Workflow
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      HỆ THỐNG WORKFLOW                          │
+│                   HỆ THỐNG 11 WORKFLOWS                         │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
+│  ┌──────────────┐  ┌──────────────┐                             │
+│  │ WF13: Data   │  │ WF14:        │                             │
+│  │ Collector    │  │ Trending     │   THU THẬP DỮ LIỆU         │
+│  │ (RSS 6AM)   │  │ Detector 7AM │                             │
+│  └──────┬───────┘  └──────┬───────┘                             │
+│         │                 │                                     │
+│         └────────┬────────┘                                     │
+│                  ▼                                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
 │  │ WF1: Manual  │  │ WF2: Batch   │  │ WF11: Quiz   │          │
 │  │ Content Gen  │  │ Content Gen  │  │ Generator    │          │
@@ -1257,6 +1348,8 @@ Sau khi xong, gửi: `/published 26 done`
 │         │ content_queue   │    LƯU TRỮ                         │
 │         │ topic_ideas     │                                     │
 │         │ workflow_logs   │                                     │
+│         │ rss_feeds       │                                     │
+│         │ trending_log    │                                     │
 │         └───┬─────┬───┬──┘                                     │
 │             │     │   │                                         │
 │     ┌───────┘     │   └──────────┐                              │
@@ -1301,16 +1394,20 @@ Sau khi xong, gửi: `/published 26 done`
 | WF8 | Manual/Telegram | Khi cần | Hỗ trợ đăng bài LinkedIn | Không (manual) |
 | WF11 | Manual/Telegram | Khi cần | Tạo quiz trắc nghiệm | Không (manual) |
 | WF12 | Cron | Mỗi 30 phút | Auto-comment đáp án quiz | Có |
+| WF13 | Cron | Hàng ngày 6AM | Thu thập RSS feeds, tạo content | Có |
+| WF14 | Cron | Hàng ngày 7AM | Phát hiện trending topics | Có |
 
 ### Database Tables liên quan
 
 | Bảng | Workflows sử dụng | Vai trò |
 |------|-------------------|---------|
-| `content_queue` | WF1, WF2, WF3, WF6, WF7, WF8, WF11, WF12 | Lưu nội dung, theo dõi status |
-| `topic_ideas` | WF2, WF6 | Nguồn chủ đề cho batch generate |
-| `prompts` | WF1, WF2, WF11 | Template prompt cho AI |
+| `content_queue` | WF1, WF2, WF3, WF6, WF7, WF8, WF11, WF12, WF13 | Lưu nội dung, theo dõi status |
+| `topic_ideas` | WF2, WF6, WF14 | Nguồn chủ đề cho batch generate |
+| `prompts` | WF1, WF2, WF11, WF13 | Template prompt cho AI |
 | `workflow_logs` | WF5, WF6 | Log kết quả healthcheck và commands |
 | `metrics` | (chưa dùng) | Theo dõi engagement sau khi publish |
+| `rss_feeds` | WF13 | Registry các RSS feeds |
+| `trending_log` | WF14 | Lưu keywords detected, sources, timestamps |
 
 ### Cột mới trong `content_queue`
 
@@ -1320,6 +1417,9 @@ Sau khi xong, gửi: `/published 26 done`
 | `quiz_answer` | `JSONB` | Đáp án + giải thích (JSON) | WF11, WF12 |
 | `comment_scheduled_at` | `TIMESTAMP` | Thời gian sẽ auto-comment đáp án | WF11, WF12 |
 | `comment_posted` | `BOOLEAN` | Đã comment đáp án chưa | WF12 |
+| `content_source` | `VARCHAR(20)` | Nguồn content: `manual`, `rss`, `trending` | WF13, WF14 |
+| `source_url` | `TEXT` | Link bài gốc (RSS) | WF13 |
+| `source_title` | `TEXT` | Tiêu đề bài gốc | WF13 |
 
 ### Content Status Flow
 
