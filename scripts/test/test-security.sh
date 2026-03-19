@@ -97,5 +97,8 @@ if [ $ISSUES -gt 0 ]; then
   exit 1
 else
   echo -e "  ${GREEN}No security issues found${NC}"
-  exit 0
 fi
+
+# CI marker
+if [ $ISSUES -eq 0 ]; then touch /tmp/sec-pass 2>/dev/null || true; fi
+exit 0

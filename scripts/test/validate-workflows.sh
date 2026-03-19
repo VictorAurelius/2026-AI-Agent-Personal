@@ -114,4 +114,7 @@ echo "========================================"
 if [ $FAIL -gt 0 ]; then
   exit 1
 fi
+
+# CI marker
+if [ $FAIL -eq 0 ]; then touch /tmp/wf-pass 2>/dev/null || true; fi
 exit 0
