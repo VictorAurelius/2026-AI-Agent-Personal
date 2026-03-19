@@ -9,9 +9,12 @@
 .claude/skills-reference/
 
 # Other unrelated folders (already deleted)
-.github/
 .vscode/
 .log/
+
+# GitHub - ignore all except workflows
+.github/*
+!.github/workflows/
 
 # === Credentials & Secrets ===
 # CRITICAL: Never commit API keys or credentials

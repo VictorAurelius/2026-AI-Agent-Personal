@@ -1,0 +1,78 @@
+name: Docs Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'README.md'
+      - 'NEXT-ACTIONS.md'
+
+jobs:
+  markdown-lint:
+    name: Check Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for broken internal links
+        run: |
+          echo "Checking internal document links..."
+          ERRORS=0
+
+          # Find all markdown links to local files
+          for md_file in $(find docs/ -name "*.md" 2>/dev/null); do
+            # Extract relative links
+            links=$(grep -oP '\[.*?\]\(\K[^)]+' "$md_file" 2>/dev/null | grep -v "^http" | grep -v "^#" || true)
+
+            dir=$(dirname "$md_file")
+            for link in $links; do
+              # Resolve relative path
+              target="$dir/$link"
+              if [ ! -f "$target" ] && [ ! -f "$link" ]; then
+                echo "❌ Broken link in $md_file: $link"
+                ((ERRORS++))
+              fi
+            done
+          done
+
+          if [ $ERRORS -gt 0 ]; then
+            echo ""
+            echo "Found $ERRORS broken links"
+            exit 1
+          else
+            echo "✅ All internal links valid"
+          fi
+
+      - name: Check required files exist
+        run: |
+          echo "Checking required documentation..."
+          MISSING=0
+
+          for file in \
+            "README.md" \
+            "NEXT-ACTIONS.md" \
+            "docs/huong-dan-workflows.md" \
+            "docs/tong-quan-du-an.md" \
+            "docs/runbook.md" \
+            "docs/content-pillars.md" \
+            "docker/README.md"; do
+            if [ -f "$file" ]; then
+              echo "  ✅ $file"
+            else
+              echo "  ❌ $file MISSING"
+              ((MISSING++))
+            fi
+          done
+
+          if [ $MISSING -gt 0 ]; then
+            echo ""
+            echo "$MISSING required files missing"
+            exit 1
+          else
+            echo ""
+            echo "✅ All required documentation present"
+          fi
