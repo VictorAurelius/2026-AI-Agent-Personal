@@ -1,4 +1,4 @@
-# Hướng dẫn chi tiết 4 Workflows n8n
+# Hướng dẫn chi tiết 9 Workflows n8n
 
 > Tài liệu giải thích từng workflow trong hệ thống AI Agent Social Automation.
 > Mỗi workflow được mô tả: mục đích, cách hoạt động, từng node, và lưu ý quan trọng.
@@ -13,9 +13,14 @@
 2. [WF2: Batch Generate](#wf2-batch-generate) - Tạo nội dung theo lịch
 3. [WF3: Daily Digest](#wf3-daily-digest) - Báo cáo hàng ngày
 4. [WF5: Healthcheck](#wf5-healthcheck) - Giám sát hệ thống
-5. [Tổng quan kiến trúc](#tổng-quan-kiến-trúc)
-6. [Lưu ý bảo mật](#lưu-ý-bảo-mật)
-7. [FAQ & Xử lý sự cố](#faq--xử-lý-sự-cố)
+5. [WF6: Telegram Bot Interactive](#wf6-telegram-bot-interactive) - Bot tương tác 2 chiều
+6. [WF7: Facebook Auto-Post](#wf7-facebook-auto-post) - Đăng bài Facebook tự động
+7. [WF8: LinkedIn Post Helper](#wf8-linkedin-post-helper) - Hỗ trợ đăng bài LinkedIn
+8. [WF11: Quiz Generator](#wf11-quiz-generator) - Tạo câu hỏi trắc nghiệm
+9. [WF12: Auto-Comment Scheduler](#wf12-auto-comment-scheduler) - Tự động comment đáp án
+10. [Tổng quan kiến trúc](#tổng-quan-kiến-trúc)
+11. [Lưu ý bảo mật](#lưu-ý-bảo-mật)
+12. [FAQ & Xử lý sự cố](#faq--xử-lý-sự-cố)
 
 ---
 
@@ -525,43 +530,762 @@ Ollama → PostgreSQL → Redis → Evaluate
 
 ---
 
+## WF6: Telegram Bot Interactive
+
+### Mục đích
+
+Nâng cấp Telegram Bot từ **chỉ thông báo 1 chiều** thành **tương tác 2 chiều**. Cho phép bạn điều khiển toàn bộ hệ thống qua Telegram: tạo nội dung, review, duyệt, đăng bài, kiểm tra sức khỏe hệ thống.
+
+### Khi nào dùng?
+
+- Workflow này **luôn chạy** (Always Active) để nhận message từ Telegram
+- Bạn gửi lệnh qua Telegram bất cứ lúc nào
+- Không cần mở n8n hay database để quản lý nội dung
+- Điều khiển mọi thứ từ điện thoại
+
+### 15 Commands
+
+#### Tạo nội dung
+| Lệnh | Mô tả | Ví dụ |
+|-------|--------|-------|
+| `/generate <topic>` | Tạo bài viết LinkedIn (Ollama -> DB -> Reply) | `/generate AI tools cho developers` |
+| `/suggest` | AI gợi ý 5 topic ideas | `/suggest` |
+| `/addtopic <topic>\|<pillar>\|<priority>` | Thêm topic mới vào DB | `/addtopic AI trends\|tech_insights\|3` |
+
+#### Quản lý nội dung
+| Lệnh | Mô tả | Ví dụ |
+|-------|--------|-------|
+| `/status` | Thống kê content queue | `/status` |
+| `/pending` | Liệt kê bài chờ review | `/pending` |
+| `/view <id>` | Xem nội dung đầy đủ | `/view 15` |
+| `/approve <id>` | Duyệt bài viết | `/approve 15` |
+| `/reject <id> <lý do>` | Từ chối bài viết | `/reject 15 cần thêm ví dụ` |
+
+#### Đăng bài
+| Lệnh | Mô tả | Ví dụ |
+|-------|--------|-------|
+| `/post_linkedin` | Lấy bài LinkedIn approved để copy-paste | `/post_linkedin` |
+| `/post_fb` | Lấy bài Facebook approved | `/post_fb` |
+| `/published <id> <url>` | Cập nhật trạng thái đã đăng + URL | `/published 15 https://linkedin.com/post/123` |
+
+#### Hệ thống
+| Lệnh | Mô tả | Ví dụ |
+|-------|--------|-------|
+| `/topics` | Xem topics chưa dùng | `/topics` |
+| `/health` | Kiểm tra Ollama + PostgreSQL status | `/health` |
+| `/help` | Hiển thị danh sách lệnh | `/help` |
+
+### Sơ đồ luồng
+
+```
+[Telegram Trigger] ── Nhận message từ user
+       │
+       ▼
+[Extract Command] ── Parse lệnh và tham số
+       │
+       ▼
+[Switch/Router] ── Phân loại lệnh
+       │
+       ├── /help ─────────► [Reply Help Text]
+       ├── /status ────────► [Query Stats] → [Format] → [Reply]
+       ├── /pending ───────► [Query Pending] → [Format] → [Reply]
+       ├── /view ──────────► [Query Content] → [Format] → [Reply]
+       ├── /approve ───────► [Update Status] → [Reply]
+       ├── /reject ────────► [Prepare Reject] → [Do Reject] → [Reply]
+       ├── /generate ──────► [Get Prompt] → [Prepare] → [Ollama] → [Parse+Save] → [Reply]
+       ├── /topics ────────► [Query Topics] → [Format] → [Reply]
+       ├── /health ────────► [Check Ollama] → [Check Postgres] → [Evaluate] → [Reply]
+       ├── /addtopic ──────► [Parse Args] → [INSERT topic_ideas] → [Reply]
+       ├── /published ─────► [Parse Args] → [UPDATE content_queue] → [Reply]
+       ├── /suggest ───────► [Call Ollama] → [Format] → [Reply]
+       ├── /post_fb ───────► [Get FB Content] → [Format] → [Reply]
+       ├── /post_linkedin ─► [Get LI Content] → [Format] → [Reply]
+       └── fallback ───────► [Reply Help Text]
+```
+
+### Giải thích từng Node quan trọng
+
+#### Node 1: Telegram Trigger
+- **Loại:** `n8n-nodes-base.telegramTrigger`
+- **Updates:** `message`
+- **Vai trò:** Nhận mọi tin nhắn gửi đến bot
+- **Lưu ý:** Workflow PHẢI luôn ACTIVE để nhận messages
+
+#### Node 2: Extract Command (Code)
+- **Loại:** `code` (JavaScript)
+- **Vai trò:** Parse lệnh và tham số từ tin nhắn
+- **Logic:**
+  ```javascript
+  const message = $json.message.text || '';
+  const parts = message.split(' ');
+  const command = parts[0].toLowerCase();
+  const args = parts.slice(1).join(' ');
+  const chatId = $json.message.chat.id;
+  return { command, args, chatId, rawMessage: message };
+  ```
+
+#### Node 3: Switch/Router
+- **Loại:** `switch`
+- **Vai trò:** Phân loại lệnh dựa trên giá trị `command`
+- **15 routes:** Mỗi route xử lý 1 lệnh cụ thể
+- **Fallback:** Nếu lệnh không nhận dạng được → trả về Help text
+
+#### Node Security Check
+- **Vai trò:** Chỉ cho phép `chat_id` của owner tương tác
+- **Reject:** Mọi message từ chat_id khác bị bỏ qua
+- **Log:** Tất cả commands được ghi vào `workflow_logs`
+
+### Cách cấu hình BotFather
+
+1. Mở Telegram, tìm `@BotFather`
+2. Gửi `/setcommands`
+3. Chọn bot của bạn
+4. Paste danh sách commands:
+```
+generate - Tạo bài viết LinkedIn từ chủ đề
+suggest - AI gợi ý 5 topic ideas
+addtopic - Thêm topic mới (topic|pillar|priority)
+status - Xem thống kê content queue
+pending - Liệt kê bài chờ review
+view - Xem nội dung đầy đủ (dùng: /view ID)
+approve - Duyệt bài viết (dùng: /approve ID)
+reject - Từ chối bài (dùng: /reject ID lý do)
+topics - Xem danh sách topics chưa dùng
+post_linkedin - Lấy bài LinkedIn approved để đăng
+post_fb - Lấy bài Facebook approved
+published - Cập nhật đã đăng (dùng: /published ID URL)
+health - Kiểm tra Ollama + PostgreSQL
+help - Hiển thị trợ giúp
+```
+
+### Ví dụ tương tác
+
+#### `/generate AI tools cho developers`
+```
+🤖 Đang tạo nội dung...
+
+📝 *Kết quả:*
+
+[Nội dung bài viết đầy đủ ở đây]
+
+---
+📋 ID: #23
+📌 Platform: LinkedIn
+🏷️ Pillar: tech_insights
+⏳ Status: pending_review
+
+Dùng `/approve 23` để duyệt hoặc `/reject 23 <lý do>` để từ chối.
+```
+
+#### `/status`
+```
+📊 *Content Queue Status*
+
+• Draft: 2
+• ⏳ Pending Review: 5
+• ✅ Approved: 3
+• 📅 Scheduled: 1
+• 🚀 Published: 12
+• ❌ Rejected: 2
+
+📝 Unused Topics: 7
+
+Dùng `/pending` để xem chi tiết bài chờ review.
+```
+
+#### `/view 15`
+```
+📄 *Content #15*
+
+*Title:* AI đang thay đổi cách developers làm việc
+*Platform:* LinkedIn
+*Pillar:* tech_insights
+*Status:* pending_review
+*Created:* 2026-03-19 08:30
+
+---
+
+[Nội dung đầy đủ bài viết]
+
+---
+
+✅ `/approve 15` | ❌ `/reject 15 <lý do>`
+```
+
+---
+
+## WF7: Facebook Auto-Post
+
+### Mục đích
+
+Tự động **đăng bài Facebook** cho các content đã được approve. Sử dụng Meta Graph API để post trực tiếp lên Facebook Page.
+
+### Khi nào dùng?
+
+- Trigger thủ công hoặc theo cron schedule
+- Khi có bài Facebook đã được approve (`status = 'approved'` và `platform LIKE 'facebook%'`)
+- Hỗ trợ cả Facebook Tech và Facebook Chinese pages
+
+### Sơ đồ luồng
+
+```
+[Manual/Cron Trigger]
+       │
+       ▼
+[Get Approved Content] ── SELECT WHERE status='approved'
+       │                    AND platform LIKE 'facebook%'
+       ▼
+[Has Content?]
+       │
+       ├── YES ──► [Post to Facebook] ── POST Meta Graph API
+       │                  │                 /{page-id}/feed
+       │                  │
+       │                  ├── Success ──► [Update Status] ── status='published'
+       │                  │                    │               post_url = FB URL
+       │                  │                    ▼
+       │                  │              [Telegram: "Đã đăng bài!"]
+       │                  │
+       │                  └── Error ──► [Log Error]
+       │                                    │
+       │                                    ▼
+       │                              [Telegram: "Lỗi đăng bài!"]
+       │
+       └── NO ──► [Telegram: "Không có bài approved"]
+```
+
+### Giải thích từng Node quan trọng
+
+#### Node 1: Trigger
+- **Loại:** `manualTrigger` hoặc `scheduleTrigger`
+- **Vai trò:** Khởi động quy trình đăng bài
+
+#### Node 2: Get Approved Content
+- **Loại:** `postgres`
+- **SQL:**
+  ```sql
+  SELECT id, title, generated_content, platform
+  FROM content_queue
+  WHERE status = 'approved'
+    AND platform LIKE 'facebook%'
+  ORDER BY created_at ASC
+  LIMIT 1
+  ```
+
+#### Node 3: Post to Facebook
+- **Loại:** `httpRequest`
+- **URL:** `https://graph.facebook.com/v18.0/{{ $env.FACEBOOK_PAGE_ID }}/feed`
+- **Method:** POST
+- **Body:**
+  ```json
+  {
+    "message": "{{ $json.generated_content }}",
+    "access_token": "{{ $env.FACEBOOK_PAGE_TOKEN }}"
+  }
+  ```
+- **Rate limit:** Không đăng quá 5 bài/ngày/page
+
+#### Node 4: Update Status
+- **SQL:**
+  ```sql
+  UPDATE content_queue
+  SET status = 'published',
+      post_url = 'https://facebook.com/{{ post_id }}',
+      published_at = NOW()
+  WHERE id = {{ content_id }}
+  ```
+
+### Yêu cầu
+
+#### Facebook App Setup
+1. Tạo Facebook App tại `developers.facebook.com`
+2. Thêm product "Facebook Login"
+3. Lấy Page Access Token (long-lived, 60 ngày)
+4. Cần permissions: `pages_manage_posts`, `pages_read_engagement`
+
+#### Environment Variables
+```bash
+# Thêm vào docker/.env
+FACEBOOK_PAGE_ID=your_page_id
+FACEBOOK_PAGE_TOKEN=your_long_lived_token
+```
+
+Sau khi thêm, recreate n8n container:
+```bash
+docker-compose up -d --force-recreate n8n
+```
+
+#### Security
+- Token PHẢI lưu trong `.env`, KHÔNG commit vào git
+- Page tokens cần renew mỗi 60 ngày
+- Rate limiting: Không đăng quá 5 bài/ngày/page
+
+### Ví dụ output
+
+Khi đăng thành công, Telegram nhận thông báo:
+```
+✅ Đã đăng bài Facebook!
+
+📋 ID: #18
+📌 Platform: facebook_tech
+🔗 URL: https://facebook.com/123456789
+
+📊 Thống kê: 3 bài approved còn lại
+```
+
+---
+
+## WF8: LinkedIn Post Helper
+
+### Mục đích
+
+Hỗ trợ **đăng bài LinkedIn** bằng cách gửi nội dung đã approve qua Telegram để bạn copy-paste lên LinkedIn. Đây là workflow **manual** vì LinkedIn API cần approval process.
+
+### Khi nào dùng?
+
+- Trigger thủ công hoặc qua lệnh `/post_linkedin` trong Telegram Bot
+- Khi có bài LinkedIn đã được approve
+
+### Tại sao dùng manual posting?
+
+LinkedIn API có nhiều hạn chế:
+- **Approval process dài:** Cần apply Marketing Developer Platform, chờ vài tuần
+- **Personal profile hạn chế:** API chủ yếu cho Company Pages
+- **An toàn hơn:** Manual posting tránh bị LinkedIn flag spam
+- **Tạm thời:** Có thể chuyển sang API sau khi được approve
+
+### Sơ đồ luồng
+
+```
+[Manual Trigger hoặc Telegram /post_linkedin]
+       │
+       ▼
+[Get Approved LinkedIn Content]
+       │  SELECT WHERE status='approved' AND platform='linkedin'
+       ▼
+[Has Content?]
+       │
+       ├── YES ──► [Format for LinkedIn]
+       │               │
+       │               ▼
+       │          [Send to Telegram] ── Gửi nội dung + hướng dẫn:
+       │               │               "1. Copy nội dung trên
+       │               │                2. Mở LinkedIn → Create a post
+       │               │                3. Paste và đăng
+       │               │                4. Dùng /published <id> <url>"
+       │               ▼
+       │          [Update Status] ── status = 'scheduled'
+       │
+       └── NO ──► [Telegram: "Không có bài LinkedIn approved"]
+```
+
+### Giải thích từng Node quan trọng
+
+#### Node 1: Get Approved LinkedIn Content
+- **Loại:** `postgres`
+- **SQL:**
+  ```sql
+  SELECT id, title, generated_content, pillar
+  FROM content_queue
+  WHERE status = 'approved' AND platform = 'linkedin'
+  ORDER BY created_at ASC
+  LIMIT 1
+  ```
+
+#### Node 2: Format for LinkedIn
+- **Loại:** `code` (JavaScript)
+- **Vai trò:** Định dạng nội dung phù hợp LinkedIn
+- **Xử lý:** Thêm hashtags, format emoji, đảm bảo chiều dài phù hợp
+
+#### Node 3: Send to Telegram
+- **Loại:** `telegram`
+- **Vai trò:** Gửi nội dung kèm hướng dẫn đăng bài
+
+### Ví dụ output
+
+Telegram nhận tin nhắn:
+```
+📋 *Bài LinkedIn #15 - Sẵn sàng đăng*
+
+---
+
+[Toàn bộ nội dung bài viết LinkedIn đã format]
+
+---
+
+📌 *Hướng dẫn đăng:*
+1. Copy nội dung phía trên
+2. Mở LinkedIn → Create a post
+3. Paste nội dung và đăng
+4. Sau khi đăng xong, gửi:
+   `/published 15 https://linkedin.com/post/xxx`
+```
+
+---
+
+## WF11: Quiz Generator
+
+### Mục đích
+
+Tạo **câu hỏi trắc nghiệm tech** (quiz) bằng AI. Quiz có engagement cao vì mọi người tranh luận đáp án, save để ôn thi, và tag bạn bè.
+
+### Khi nào dùng?
+
+- Trigger thủ công hoặc qua lệnh `/quiz <topic>` trong Telegram
+- Khi muốn tạo content dạng quiz cho LinkedIn hoặc Facebook
+- Các chủ đề phổ biến: AWS Certification, System Design, Coding Challenges, DevOps
+
+### Sơ đồ luồng
+
+```
+[Trigger: Manual hoặc Telegram /quiz <topic>]
+       │
+       ▼
+[Get Quiz Prompt] ── Lấy prompt template cho quiz
+       │
+       ▼
+[Call Ollama] ── Generate structured JSON
+       │          (câu hỏi + 4 options + đáp án + giải thích)
+       │          Model: Llama 3.1 8B
+       ▼
+[Parse Quiz] ── Tách thành 2 phần:
+       │          1. question_text → generated_content (hiển thị)
+       │          2. answer_data → quiz_answer JSONB (ẩn)
+       ▼
+[Save to DB] ── INSERT content_queue:
+       │          content_format = 'quiz'
+       │          generated_content = question text
+       │          quiz_answer = answer JSON
+       │          comment_scheduled_at = NOW() + 4 hours
+       ▼
+[Telegram] ── "Quiz created! Review and approve"
+```
+
+### Giải thích từng Node quan trọng
+
+#### Node 1: Get Quiz Prompt
+- **Loại:** `postgres`
+- **Vai trò:** Lấy prompt template đặc biệt cho quiz
+- **Prompt yêu cầu Ollama:** Trả về structured JSON gồm scenario, 4 options, correct answer, và giải thích chi tiết
+
+#### Node 2: Call Ollama
+- **Loại:** `httpRequest`
+- **URL:** `http://ollama:11434/api/chat`
+- **Vai trò:** Generate quiz dưới dạng structured JSON
+- **Output mẫu:**
+  ```json
+  {
+    "question": "Công ty cần transfer 50TB data lên AWS...",
+    "options": {
+      "A": "Dùng AWS Direct Connect",
+      "B": "Upload qua S3 multi-part",
+      "C": "Dùng AWS Snowball",
+      "D": "Dùng AWS DataSync"
+    },
+    "correct_answer": "C",
+    "explanation": "AWS Snowball phù hợp cho transfer >10TB..."
+  }
+  ```
+
+#### Node 3: Parse Quiz (Code)
+- **Loại:** `code` (JavaScript)
+- **Vai trò:** Tách JSON thành 2 phần riêng biệt
+- **Phần 1 - Question text** (sẽ đăng):
+  ```
+  📝 [Câu hỏi - Scenario]
+
+  A. Option A
+  B. Option B
+  C. Option C
+  D. Option D
+
+  💬 Comment đáp án của bạn!
+  ⏰ Đáp án sẽ được công bố sau 4 giờ
+
+  #AWS #CloudComputing #TechQuiz
+  ```
+- **Phần 2 - Answer data** (lưu riêng trong `quiz_answer`):
+  ```json
+  {
+    "correct_answer": "C",
+    "explanation": "Giải thích chi tiết...",
+    "wrong_answers": {
+      "A": "Tại sao A sai...",
+      "B": "Tại sao B sai...",
+      "D": "Tại sao D sai..."
+    },
+    "key_concepts": [
+      {"name": "AWS Snowball", "description": "Thiết bị transfer data offline..."}
+    ]
+  }
+  ```
+
+#### Node 4: Save to DB
+- **Loại:** `postgres`
+- **INSERT:**
+
+| Cột | Giá trị |
+|-----|---------|
+| `generated_content` | Question text (câu hỏi + 4 options) |
+| `content_format` | `quiz` |
+| `quiz_answer` | Answer JSON (đáp án + giải thích) |
+| `comment_scheduled_at` | `NOW() + INTERVAL '4 hours'` |
+| `status` | `pending_review` |
+
+### Quiz Format
+
+**Câu hỏi đăng lên social:**
+```
+📝 Công ty XYZ cần transfer 50TB dữ liệu từ on-premise lên AWS S3.
+Kết nối internet hiện tại là 100Mbps.
+Deadline: 1 tuần.
+
+Giải pháp nào phù hợp nhất?
+
+A. AWS Direct Connect
+B. S3 Multi-part Upload
+C. AWS Snowball
+D. AWS DataSync qua VPN
+
+💬 Comment đáp án của bạn!
+⏰ Đáp án sẽ được công bố sau 4 giờ
+
+#AWS #SAA #CloudComputing #TechQuiz
+```
+
+**Đáp án auto-comment sau 4 giờ:**
+```
+✅ Đáp án: C - AWS Snowball
+
+📖 Giải thích:
+50TB qua 100Mbps mất ~46 ngày, vượt deadline 1 tuần.
+AWS Snowball cho phép transfer offline, gửi thiết bị vật lý.
+
+❌ Tại sao các đáp án khác sai:
+• A: Direct Connect mất vài tuần setup
+• B: 100Mbps quá chậm cho 50TB
+• D: DataSync vẫn phụ thuộc bandwidth
+
+💡 Key concepts:
+• AWS Snowball: Transfer >10TB offline
+• AWS Snowball Edge: Có compute capability
+
+🔖 Save bài này để ôn thi!
+```
+
+### Ví dụ output
+
+Telegram nhận thông báo:
+```
+📝 Quiz Created!
+
+📋 ID: #25
+📌 Topic: AWS Data Transfer
+🏷️ Format: quiz
+⏰ Auto-comment: 4 giờ sau khi đăng
+
+Preview:
+[Câu hỏi scenario + 4 options]
+
+Dùng `/approve 25` để duyệt.
+```
+
+---
+
+## WF12: Auto-Comment Scheduler
+
+### Mục đích
+
+Tự động **comment đáp án quiz** lên bài viết đã đăng sau khoảng thời gian định trước (mặc định 4 giờ). Hỗ trợ Facebook (tự động qua API) và LinkedIn (manual qua Telegram).
+
+### Khi nào chạy?
+
+- **Tự động** mỗi 30 phút (Cron)
+- Kiểm tra xem có quiz nào đã đến giờ comment đáp án chưa
+- Không cần trigger thủ công
+
+### Sơ đồ luồng
+
+```
+[Cron: Every 30 minutes]
+       │
+       ▼
+[Get Due Comments] ── SELECT FROM content_queue WHERE:
+       │                status = 'published'
+       │                content_format = 'quiz'
+       │                comment_posted = false
+       │                comment_scheduled_at <= NOW()
+       ▼
+[Has Items?]
+       │
+       ├── YES ──► [Loop Each Quiz]
+       │               │
+       │               ▼
+       │          [Format Comment] ── Build comment text
+       │               │              từ quiz_answer JSON
+       │               ▼
+       │          [Check Platform]
+       │               │
+       │               ├── Facebook ──► [POST /{post-id}/comments]
+       │               │                   Meta Graph API
+       │               │                   │
+       │               │                   ▼
+       │               │              [Mark Done] ── comment_posted = true
+       │               │                   │
+       │               │                   ▼
+       │               │              [Telegram: "Đã comment đáp án #ID"]
+       │               │
+       │               └── LinkedIn ──► [Send to Telegram]
+       │                                  "Hãy comment đáp án sau
+       │                                   trên LinkedIn post #ID"
+       │                                   │
+       │                                   ▼
+       │                              [Mark Done] ── comment_posted = true
+       │
+       └── NO ──► (kết thúc, không làm gì)
+```
+
+### Giải thích từng Node quan trọng
+
+#### Node 1: Cron Every 30 Min
+- **Loại:** `scheduleTrigger`
+- **Interval:** Mỗi 30 phút
+- **Lý do 30 phút:** Cân bằng giữa tính kịp thời và tải hệ thống
+
+#### Node 2: Get Due Comments
+- **Loại:** `postgres`
+- **SQL:**
+  ```sql
+  SELECT id, title, platform, post_url, quiz_answer
+  FROM content_queue
+  WHERE status = 'published'
+    AND content_format = 'quiz'
+    AND comment_posted = false
+    AND comment_scheduled_at <= NOW()
+  ORDER BY comment_scheduled_at ASC
+  ```
+
+#### Node 3: Format Comment (Code)
+- **Loại:** `code` (JavaScript)
+- **Vai trò:** Parse `quiz_answer` JSON và build comment text
+- **Output:** Comment text hoàn chỉnh với đáp án + giải thích + key concepts
+
+#### Node 4: Post Comment (Facebook)
+- **Loại:** `httpRequest`
+- **URL:** `https://graph.facebook.com/v18.0/{{ post_id }}/comments`
+- **Method:** POST
+- **Body:**
+  ```json
+  {
+    "message": "✅ Đáp án: C\n\n📖 Giải thích:\n...",
+    "access_token": "{{ $env.FACEBOOK_PAGE_TOKEN }}"
+  }
+  ```
+- **Permission cần:** `pages_manage_engagement`
+
+#### Node 5: Mark Done
+- **SQL:**
+  ```sql
+  UPDATE content_queue
+  SET comment_posted = true
+  WHERE id = {{ quiz_id }}
+  ```
+
+### Platform Routing
+
+| Platform | Phương thức | Chi tiết |
+|----------|-------------|----------|
+| **Facebook** | Auto (API) | POST `/{post-id}/comments` qua Meta Graph API |
+| **LinkedIn** | Manual (Telegram) | Gửi nội dung comment qua Telegram để user copy-paste |
+
+**Lý do LinkedIn manual:** LinkedIn API không cho phép comment trên personal posts qua API. Cần Company Page + Marketing Developer Platform approval.
+
+### Ví dụ output
+
+#### Facebook (tự động)
+Telegram nhận thông báo:
+```
+✅ Đã comment đáp án quiz!
+
+📋 Quiz ID: #25
+📌 Platform: facebook_tech
+🔗 Post: https://facebook.com/123456789
+⏰ Comment sau: 4 giờ
+
+Đáp án: C - AWS Snowball
+```
+
+#### LinkedIn (manual)
+Telegram nhận tin nhắn:
+```
+📝 Cần comment đáp án quiz LinkedIn!
+
+📋 Quiz ID: #26
+🔗 Post: https://linkedin.com/post/xxx
+
+📋 Nội dung comment:
+---
+✅ Đáp án: C - AWS Snowball
+
+📖 Giải thích:
+[Chi tiết giải thích]
+---
+
+Hãy copy và paste comment này lên LinkedIn post.
+Sau khi xong, gửi: `/published 26 done`
+```
+
+---
+
 ## Tổng quan kiến trúc
 
 ### Mối quan hệ giữa các Workflow
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    HỆ THỐNG WORKFLOW                        │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌──────────────┐    ┌──────────────┐                      │
-│  │ WF1: Manual  │    │ WF2: Batch   │   TẠO NỘI DUNG      │
-│  │ Content Gen  │    │ Content Gen  │                      │
-│  └──────┬───────┘    └──────┬───────┘                      │
-│         │                   │                               │
-│         └─────────┬─────────┘                               │
-│                   ▼                                         │
-│         ┌─────────────────┐                                 │
-│         │   PostgreSQL    │                                 │
-│         │ content_queue   │    LƯU TRỮ                     │
-│         │ topic_ideas     │                                 │
-│         │ workflow_logs   │                                 │
-│         └────────┬────────┘                                 │
-│                  │                                          │
-│         ┌────────┴────────┐                                 │
-│         ▼                 ▼                                 │
-│  ┌──────────────┐  ┌──────────────┐                        │
-│  │ WF3: Daily   │  │ WF5: Health  │   GIÁM SÁT            │
-│  │ Digest       │  │ Check        │                        │
-│  └──────┬───────┘  └──────┬───────┘                        │
-│         │                 │                                 │
-│         └─────────┬───────┘                                 │
-│                   ▼                                         │
-│         ┌─────────────────┐                                 │
-│         │   Telegram Bot  │    THÔNG BÁO                   │
-│         └─────────────────┘                                 │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                      HỆ THỐNG WORKFLOW                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │ WF1: Manual  │  │ WF2: Batch   │  │ WF11: Quiz   │          │
+│  │ Content Gen  │  │ Content Gen  │  │ Generator    │          │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘          │
+│         │                 │                  │   TẠO NỘI DUNG   │
+│         └────────┬────────┴──────────────────┘                  │
+│                  ▼                                              │
+│         ┌─────────────────┐                                     │
+│         │   PostgreSQL    │                                     │
+│         │ content_queue   │    LƯU TRỮ                         │
+│         │ topic_ideas     │                                     │
+│         │ workflow_logs   │                                     │
+│         └───┬─────┬───┬──┘                                     │
+│             │     │   │                                         │
+│     ┌───────┘     │   └──────────┐                              │
+│     ▼             ▼              ▼                              │
+│  ┌────────┐  ┌────────┐  ┌──────────────┐                      │
+│  │ WF3:   │  │ WF5:   │  │ WF12: Auto-  │   GIÁM SÁT          │
+│  │ Digest │  │ Health │  │ Comment      │                      │
+│  └───┬────┘  └───┬────┘  └──────┬───────┘                      │
+│      │           │               │                              │
+│      └─────┬─────┴───────────────┘                              │
+│            ▼                                                    │
+│  ┌─────────────────────────────────────────┐                    │
+│  │   WF6: Telegram Bot Interactive         │   ĐIỀU KHIỂN      │
+│  │   (15 commands, luôn active)            │                    │
+│  └───────┬─────────────────┬───────────────┘                    │
+│          │                 │                                    │
+│          ▼                 ▼                                    │
+│  ┌──────────────┐  ┌──────────────┐                             │
+│  │ WF7: FB      │  │ WF8: LI      │          ĐĂNG BÀI          │
+│  │ Auto-Post    │  │ Post Helper  │                             │
+│  └──────┬───────┘  └──────┬───────┘                             │
+│         │                 │                                     │
+│         ▼                 ▼                                     │
+│  ┌──────────┐      ┌──────────┐                                 │
+│  │ Facebook │      │ LinkedIn │                                 │
+│  │ (API)    │      │ (manual) │                                 │
+│  └──────────┘      └──────────┘                                 │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Bảng tổng hợp
@@ -572,16 +1296,30 @@ Ollama → PostgreSQL → Redis → Evaluate
 | WF2 | Cron | Mon/Wed/Fri 8AM | Tạo batch 5 bài (multi-platform) | Có |
 | WF3 | Cron | Hàng ngày 9AM | Báo cáo tổng hợp | Có |
 | WF5 | Cron | Mỗi 5 phút | Giám sát services | Có |
+| WF6 | Telegram Trigger | Always on | Bot tương tác 15 commands | Có |
+| WF7 | Manual/Cron | Khi cần | Đăng bài Facebook tự động | Có |
+| WF8 | Manual/Telegram | Khi cần | Hỗ trợ đăng bài LinkedIn | Không (manual) |
+| WF11 | Manual/Telegram | Khi cần | Tạo quiz trắc nghiệm | Không (manual) |
+| WF12 | Cron | Mỗi 30 phút | Auto-comment đáp án quiz | Có |
 
 ### Database Tables liên quan
 
 | Bảng | Workflows sử dụng | Vai trò |
 |------|-------------------|---------|
-| `content_queue` | WF1, WF2, WF3 | Lưu nội dung, theo dõi status |
-| `topic_ideas` | WF2 | Nguồn chủ đề cho batch generate |
-| `prompts` | WF1, WF2 | Template prompt cho AI |
-| `workflow_logs` | WF5 | Log kết quả healthcheck |
+| `content_queue` | WF1, WF2, WF3, WF6, WF7, WF8, WF11, WF12 | Lưu nội dung, theo dõi status |
+| `topic_ideas` | WF2, WF6 | Nguồn chủ đề cho batch generate |
+| `prompts` | WF1, WF2, WF11 | Template prompt cho AI |
+| `workflow_logs` | WF5, WF6 | Log kết quả healthcheck và commands |
 | `metrics` | (chưa dùng) | Theo dõi engagement sau khi publish |
+
+### Cột mới trong `content_queue`
+
+| Cột | Kiểu | Mô tả | Workflows |
+|-----|------|-------|-----------|
+| `content_format` | `VARCHAR(20)` | Loại content: `post`, `quiz`, `carousel`, `infographic` | WF11, WF12 |
+| `quiz_answer` | `JSONB` | Đáp án + giải thích (JSON) | WF11, WF12 |
+| `comment_scheduled_at` | `TIMESTAMP` | Thời gian sẽ auto-comment đáp án | WF11, WF12 |
+| `comment_posted` | `BOOLEAN` | Đã comment đáp án chưa | WF12 |
 
 ### Content Status Flow
 
@@ -691,5 +1429,5 @@ Nếu = 0, thêm topic mới.
 ---
 
 **Tác giả:** VictorAurelius + Claude
-**Phiên bản:** 1.0
+**Phiên bản:** 2.0
 **Cập nhật:** 2026-03-19
