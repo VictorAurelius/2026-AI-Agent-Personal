@@ -71,3 +71,7 @@ Outbound: 10 TB/tháng và Vĩnh viễn
 Tính đến 2026, Oracle Cloud Always Free Tier vẫn hoạt động bình thường với các tài nguyên chủ chốt không thay đổi, bao gồm Ampere A1 (4 OCPU, 24GB RAM), 200GB block storage. Grokipedia
 Idle reclamation: CPU <20%
 Oracle xác định VM là idle nếu trong 7 ngày, CPU utilization ở percentile thứ 95 dưới 20% — đây là chính sách chính thức từ Oracle docs. Oracle ✅ Document ghi đúng.
+
+đọc .claude\starter-kit\README.md để apply kit vào dự án
+
+không cần apply các vấn đề khác mà kit đề cập sao?
