@@ -105,7 +105,8 @@ def extract(slug):
 
     click.secho(f"Extracted {len(chapters)} chapters:", fg="green")
     for ch in chapters:
-        click.echo(f"  {ch['id']}: {ch['title']} ({ch['word_count']} words)")
+        word_count = ch.get("word_count", len(ch.get("content", "").split()))
+        click.echo(f"  {ch['id']}: {ch['title']} ({word_count} words)")
 
 
 @cli.command()
@@ -123,7 +124,7 @@ def status(slug):
     title = config["book"]["title"]
     author = config["book"]["author"]
 
-    click.echo(f"\n{title} — {author}")
+    click.echo(f"\n{title} - {author}")
     click.echo(f"   Status: {progress['status']}\n")
 
     status_icons = {
@@ -135,14 +136,14 @@ def status(slug):
     approved = sum(1 for ch in progress["chapters"] if ch["status"] == "approved")
 
     click.echo(f"   {'Chapter':<35} {'Words':>6}  Status")
-    click.echo(f"   {'─' * 55}")
+    click.echo(f"   {'-' * 55}")
     for ch in progress["chapters"]:
         icon = status_icons.get(ch["status"], "[?]")
         click.echo(
             f"   {ch['id']}  {ch.get('title', ''):<30} "
             f"{ch.get('word_count_source', 0):>6}  {icon} {ch['status']}"
         )
-    click.echo(f"   {'─' * 55}")
+    click.echo(f"   {'-' * 55}")
     click.echo(f"   Progress: {approved}/{total} approved")
 
 
