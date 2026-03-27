@@ -73,3 +73,16 @@ class TestValidateCommand:
         runner.invoke(cli, ["extract", "test-book"])
         result = runner.invoke(cli, ["validate", "test-book"])
         assert "error" in result.output.lower() or "missing" in result.output.lower()
+
+
+class TestConsistencyScanCommand:
+    def test_runs_scan(self, runner, initialized_project, monkeypatch):
+        import manage
+        monkeypatch.setattr(manage, "PROJECTS_DIR", initialized_project.parent)
+        runner.invoke(cli, ["extract", "test-book"])
+        translated_dir = initialized_project / "translated"
+        (translated_dir / "ch01.md").write_text(
+            "---\nchapter: 1\nstatus: draft\n---\n\n# Ch 1\n\nContent.\n", encoding="utf-8")
+        result = runner.invoke(cli, ["consistency-scan", "test-book"])
+        assert result.exit_code == 0
+        assert "Consistency Report" in result.output or "consistency" in result.output.lower()

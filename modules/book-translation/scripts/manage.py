@@ -268,5 +268,18 @@ def validate(slug):
         click.secho("All checks passed!", fg="green")
 
 
+@cli.command("consistency-scan")
+@click.argument("slug")
+def consistency_scan(slug):
+    """Run consistency checks on translated chapters."""
+    project_dir = PROJECTS_DIR / slug
+    if not project_dir.exists():
+        click.secho(f"Project '{slug}' not found!", fg="red")
+        return
+    from lib.consistency_scanner import generate_report
+    report = generate_report(project_dir)
+    click.echo(report)
+
+
 if __name__ == "__main__":
     cli()
