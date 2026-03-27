@@ -15,10 +15,12 @@ def parse_markdown_elements(markdown: str) -> list[dict]:
         if not line:
             i += 1
             continue
+        # Page break: --- alone on a line
         if re.match(r"^-{3,}$", line):
             elements.append({"type": "page_break"})
             i += 1
             continue
+        # ATX headings
         heading_match = re.match(r"^(#{1,6})\s+(.+)$", line)
         if heading_match:
             level = len(heading_match.group(1))
@@ -26,10 +28,21 @@ def parse_markdown_elements(markdown: str) -> list[dict]:
             elements.append({"type": "heading", "level": level, "text": text})
             i += 1
             continue
-        if line.startswith("> "):
-            text = line[2:].strip()
-            elements.append({"type": "blockquote", "text": text})
+        # Footnote definition: [^N]: text
+        footnote_match = re.match(r"^\[\^(\w+)\]:\s+(.+)$", line)
+        if footnote_match:
+            fn_id = footnote_match.group(1)
+            fn_text = footnote_match.group(2).strip()
+            elements.append({"type": "footnote_def", "id": fn_id, "text": fn_text})
             i += 1
+            continue
+        # Blockquote — merge consecutive > lines into single element
+        if line.startswith("> "):
+            bq_lines = []
+            while i < len(lines) and lines[i].rstrip().startswith("> "):
+                bq_lines.append(lines[i].rstrip()[2:].strip())
+                i += 1
+            elements.append({"type": "blockquote", "text": " ".join(bq_lines)})
             continue
         runs = _parse_inline_formatting(line)
         elements.append({"type": "paragraph", "text": line, "runs": runs})
@@ -89,6 +102,13 @@ def render_markdown_to_docx(
             run = para.add_run(elem["text"])
             run.font.name = font_name
             run.font.size = Pt(font_size)
+            run.italic = True
+        elif elem["type"] == "footnote_def":
+            # Render footnote definition as smaller italic text
+            para = doc.add_paragraph()
+            run = para.add_run(f"[^{elem['id']}]: {elem['text']}")
+            run.font.name = font_name
+            run.font.size = Pt(max(font_size - 2, 8))
             run.italic = True
         elif elem["type"] == "paragraph":
             para = doc.add_paragraph()

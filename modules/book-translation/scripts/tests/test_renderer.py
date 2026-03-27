@@ -53,6 +53,51 @@ class TestParseMarkdownElements:
         assert "page_break" in types
 
 
+class TestFootnoteRendering:
+    def test_footnote_def_parsed_as_element(self):
+        """[^1]: text should produce a footnote_def element."""
+        elements = parse_markdown_elements("[^1]: This is a footnote.\n")
+        assert len(elements) == 1
+        assert elements[0]["type"] == "footnote_def"
+        assert elements[0]["id"] == "1"
+        assert elements[0]["text"] == "This is a footnote."
+
+    def test_footnote_def_with_multidigit_id(self):
+        """[^42]: text with multi-digit footnote id."""
+        elements = parse_markdown_elements("[^42]: Another footnote.\n")
+        assert elements[0]["type"] == "footnote_def"
+        assert elements[0]["id"] == "42"
+        assert elements[0]["text"] == "Another footnote."
+
+
+class TestMultiLineBlockquote:
+    def test_consecutive_blockquote_lines_merge(self):
+        """Consecutive > lines should merge into a single blockquote element."""
+        md = "> Line one.\n> Line two.\n> Line three.\n"
+        elements = parse_markdown_elements(md)
+        blockquotes = [e for e in elements if e["type"] == "blockquote"]
+        assert len(blockquotes) == 1
+        assert "Line one." in blockquotes[0]["text"]
+        assert "Line two." in blockquotes[0]["text"]
+        assert "Line three." in blockquotes[0]["text"]
+
+
+class TestDocxFootnotes:
+    def test_footnote_def_renders_in_docx(self, tmp_path):
+        """footnote_def should render as smaller italic text in DOCX."""
+        md = "# Title\n\nMain content.\n\n[^1]: This is a footnote.\n"
+        output = tmp_path / "footnote_test.docx"
+        render_markdown_to_docx(md, output)
+        from docx import Document
+        doc = Document(str(output))
+        # Find any italic run with footnote text
+        italic_runs = [
+            run for p in doc.paragraphs for run in p.runs
+            if run.italic and "footnote" in run.text.lower()
+        ]
+        assert len(italic_runs) >= 1
+
+
 class TestRenderMarkdownToDocx:
     def test_creates_docx_file(self, tmp_path):
         md = "# Chapter 1\n\nHello world.\n"
