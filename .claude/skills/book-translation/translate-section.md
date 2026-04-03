@@ -82,4 +82,10 @@ Self-review checklist:
    git push
    ```
 
-5. **Ask:** "Ban muon review chapter nay, hay tiep tuc dich chapter tiep theo?"
+5. **Mid-translation fixes:** If you discover a bug in scripts or skills during translation:
+   - Stash or commit current work on `translate/{slug}`
+   - Create `fix/xxx` branch from main, fix, PR, merge to main
+   - Return to `translate/{slug}` and rebase: `git rebase main`
+   - Do NOT mix tooling fixes with book content commits
+
+6. **Ask:** "Ban muon review chapter nay, hay tiep tuc dich chapter tiep theo?"

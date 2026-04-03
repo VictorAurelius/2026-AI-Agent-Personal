@@ -19,6 +19,10 @@ git push -u origin translate/{slug}
 ```
 Branch naming: `translate/{slug}` (e.g. `translate/dao-duc-kinh`).
 
+> **Important:** Book content (projects/{slug}/) stays on this branch permanently — it is
+> NEVER merged to main. Only cross-book data (memory/) and tooling fixes flow back to main
+> via separate PRs. See the Git Workflow section in README for details.
+
 ### 1. Gather info
 Ask user (if not already provided):
 - Book title

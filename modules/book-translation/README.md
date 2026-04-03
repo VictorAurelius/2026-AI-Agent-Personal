@@ -42,24 +42,30 @@ python scripts/manage.py render my-book --full
 
 ## Git Workflow
 
-Each book translation lives on its own long-running branch:
+Book content stays on its own branch permanently. Only cross-book learnings merge to main.
 
 ```
-main ──┬──────────────────────────────────── main
-       │
-       └── translate/my-book
-            ├─ init + extract + style guide
-            ├─ translate(my-book): complete ch01
-            ├─ translate(my-book): complete ch02
-            ├─ ...
-            ├─ translate(my-book): finalize
-            └─ PR → merge to main
+main ──┬──── fix/xxx ──PR──┬──── memory/post-sach-1 ──PR──┬──── ...
+       │        ↑           │            ↑                  │
+       └── translate/sach-1 │            │                  └── translate/sach-2
+            │               │            │                       (has memory from sach-1)
+            ├─ init         │            │
+            ├─ ch01         │            │
+            ├─ found bug ───┘            │
+            ├─ ch02 (rebase main)        │
+            ├─ ...                       │
+            ├─ finalize                  │
+            └─ cherry-pick memory/ ──────┘
+               tag: archive/translate/sach-1
 ```
 
-- **Branch:** `translate/{slug}` (created by `init-project` skill)
-- **Commits:** one per translated chapter, message format `translate({slug}): complete {chapter}`
-- **Push:** every 2-3 chapters or end of session
-- **PR:** created after consistency check passes, merged when book is done
+### Rules
+- **Branch:** `translate/{slug}` — created by `init-project` skill
+- **Commits:** one per chapter: `translate({slug}): complete {chapter}`
+- **NEVER merge** `translate/{slug}` into main — book content stays on branch
+- **Tooling fixes** found during translation → separate `fix/` branch from main → PR → rebase translate branch
+- **Memory merge** when book is done → `memory/post-{slug}` branch → PR with only `memory/` files
+- **Archive:** tag `archive/translate/{slug}` after memory merged — branch kept as permanent record
 
 ## Scripts
 
