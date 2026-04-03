@@ -28,7 +28,12 @@ User says "dich chapter X", "tiep tuc dich", "translate next", or "dich tiep".
 - Read the source section completely
 - Read style-guide.md rules
 - Read glossary.md terms
-- Translate the entire section following the style guide
+- **Translate EVERYTHING** — not just body text:
+  - Chapter titles → Vietnamese
+  - Headings and subheadings → Vietnamese
+  - Quotes, epigraphs, captions → Vietnamese
+  - Table of contents entries (if present) → Vietnamese
+  - Only keep proper names in original (author names, place names per glossary)
 - Preserve paragraph structure from source
 - Apply glossary terms consistently
 - Use Vietnamese idioms where appropriate

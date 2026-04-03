@@ -41,7 +41,27 @@ python scripts/manage.py init "{title}" --author "{author}" --source "{path}"
 python scripts/manage.py extract {slug}
 ```
 
-### 4. User reviews extraction
+### 4. Clean extracted chapters
+PDF extraction produces artifacts. Claude MUST review and fix each chapter file:
+
+**Character fixes:**
+- Replace `�` with proper quotes (`"` or `'`)
+- Fix curly quote mojibake (`\x93`/`\x94` → `"`/`"`)
+- Fix broken dashes (`\x96`/`\x97` → `–`/`—`)
+
+**Split word fixes:**
+- Single uppercase + space + lowercase: `T hese` → `These`, `W hen` → `When`
+- Short fragment + space + fragment: `th at` → `that`, `the n` → `then`
+- Use context to determine if a space is a real word boundary or PDF artifact
+
+**Paragraph merge:**
+- PDF pages create artificial paragraph breaks mid-sentence
+- If a paragraph does NOT end with `.?!:;` AND the next starts lowercase → merge into one paragraph
+- Keep intentional paragraph breaks (ends with period, next starts uppercase)
+
+**Process:** Read each `source/chapters/chXX.md`, apply fixes, overwrite the file.
+
+### 5. User reviews extraction
 Show the user:
 - Number of chapters detected
 - Word count per chapter
