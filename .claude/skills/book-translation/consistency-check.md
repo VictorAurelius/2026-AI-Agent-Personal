@@ -104,6 +104,37 @@ After consistency check passes (all chapters approved + consistent):
 4. Present notable translation patterns → merge into `modules/book-translation/memory/translation-patterns.md`
 5. Update `projects/{slug}/progress.yaml`: book status → `done`
 
+## Step 8: Finalize Git
+
+When the book translation is complete (all chapters approved + consistent):
+
+1. **Commit final state:**
+   ```bash
+   git add -A modules/book-translation/projects/{slug}/
+   git commit -m "translate({slug}): finalize — all chapters approved"
+   ```
+
+2. **Push and create PR:**
+   ```bash
+   git push
+   gh pr create --title "translate({slug}): complete book translation" --body "$(cat <<'EOF'
+   ## Summary
+   - Completed translation of {book title}
+   - All chapters approved and consistency-checked
+   - Glossary and style rules merged to global memory
+
+   ## Chapters
+   [list chapters with word counts]
+   EOF
+   )"
+   ```
+
+3. **After PR merged:** clean up local branch:
+   ```bash
+   git checkout main && git pull
+   git branch -d translate/{slug}
+   ```
+
 ## Glossary Conflict Resolution (for future books)
 When starting a new book, `init-project` skill should:
 1. Read `memory/glossary-global.md`

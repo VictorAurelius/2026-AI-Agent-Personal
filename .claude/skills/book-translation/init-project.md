@@ -10,6 +10,15 @@ User says "dich sach moi", "translate a new book", or provides a PDF/EPUB file.
 
 ## Steps
 
+### 0. Git Setup
+Create an isolated branch for this translation project:
+```bash
+git checkout main && git pull
+git checkout -b translate/{slug}
+git push -u origin translate/{slug}
+```
+Branch naming: `translate/{slug}` (e.g. `translate/dao-duc-kinh`).
+
 ### 1. Gather info
 Ask user (if not already provided):
 - Book title
