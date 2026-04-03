@@ -37,6 +37,29 @@ python scripts/manage.py render my-book --full
 | `init-project` | Initialize new translation project with source file |
 | `define-style` | Define translation style and tone for consistency |
 | `translate-section` | Translate single section with memory integration |
+| `review-translation` | Review and learn from user feedback on translations |
+| `consistency-check` | Cross-chapter consistency scan and finalization |
+
+## Git Workflow
+
+Each book translation lives on its own long-running branch:
+
+```
+main ──┬──────────────────────────────────── main
+       │
+       └── translate/my-book
+            ├─ init + extract + style guide
+            ├─ translate(my-book): complete ch01
+            ├─ translate(my-book): complete ch02
+            ├─ ...
+            ├─ translate(my-book): finalize
+            └─ PR → merge to main
+```
+
+- **Branch:** `translate/{slug}` (created by `init-project` skill)
+- **Commits:** one per translated chapter, message format `translate({slug}): complete {chapter}`
+- **Push:** every 2-3 chapters or end of session
+- **PR:** created after consistency check passes, merged when book is done
 
 ## Scripts
 

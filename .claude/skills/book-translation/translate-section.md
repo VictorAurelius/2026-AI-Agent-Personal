@@ -72,4 +72,14 @@ Self-review checklist:
    - Any new terms encountered (suggest adding to glossary)
    - Any passages that were particularly challenging
 
-4. **Ask:** "Ban muon review chapter nay, hay tiep tuc dich chapter tiep theo?"
+4. **Git commit:** Stage and commit the translated chapter:
+   ```bash
+   git add projects/{slug}/translated/{chapter}.md projects/{slug}/progress.yaml projects/{slug}/glossary.md
+   git commit -m "translate({slug}): complete {chapter}"
+   ```
+   Push periodically (every 2-3 chapters or end of session):
+   ```bash
+   git push
+   ```
+
+5. **Ask:** "Ban muon review chapter nay, hay tiep tuc dich chapter tiep theo?"
