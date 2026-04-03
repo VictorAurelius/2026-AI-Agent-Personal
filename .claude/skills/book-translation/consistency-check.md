@@ -108,32 +108,44 @@ After consistency check passes (all chapters approved + consistent):
 
 When the book translation is complete (all chapters approved + consistent):
 
-1. **Commit final state:**
-   ```bash
-   git add -A modules/book-translation/projects/{slug}/
-   git commit -m "translate({slug}): finalize — all chapters approved"
-   ```
+### 8a. Commit final state on translate branch
+```bash
+git add -A modules/book-translation/projects/{slug}/
+git commit -m "translate({slug}): finalize — all chapters approved"
+git push
+```
 
-2. **Push and create PR:**
-   ```bash
-   git push
-   gh pr create --title "translate({slug}): complete book translation" --body "$(cat <<'EOF'
-   ## Summary
-   - Completed translation of {book title}
-   - All chapters approved and consistency-checked
-   - Glossary and style rules merged to global memory
+### 8b. Merge cross-book memory to main (selective PR)
+Only memory files go back to main — book content stays on branch:
+```bash
+git checkout main && git pull
+git checkout -b memory/post-{slug}
+# Cherry-pick only the memory files from translate branch
+git checkout translate/{slug} -- modules/book-translation/memory/
+git commit -m "memory(book-translation): add learnings from {slug}"
+git push -u origin memory/post-{slug}
+gh pr create --title "memory(book-translation): learnings from {slug}" --body "$(cat <<'EOF'
+## Summary
+- Merge cross-book memory accumulated from translating {book title}
+- Glossary terms, style rules, and translation patterns for future books
 
-   ## Chapters
-   [list chapters with word counts]
-   EOF
-   )"
-   ```
+## Files
+- `memory/glossary-global.md` — new terms
+- `memory/style-feedback.md` — confirmed style rules
+- `memory/translation-patterns.md` — reusable patterns
+EOF
+)"
+```
 
-3. **After PR merged:** clean up local branch:
-   ```bash
-   git checkout main && git pull
-   git branch -d translate/{slug}
-   ```
+### 8c. Archive translate branch
+After memory PR is merged, archive the translate branch (do NOT delete):
+```bash
+git checkout translate/{slug}
+git tag archive/translate/{slug}
+git push origin archive/translate/{slug}
+```
+The branch serves as permanent record of the translation work.
+User can render DOCX from this branch anytime in the future.
 
 ## Glossary Conflict Resolution (for future books)
 When starting a new book, `init-project` skill should:
