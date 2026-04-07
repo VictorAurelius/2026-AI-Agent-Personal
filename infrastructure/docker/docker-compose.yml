@@ -2,7 +2,7 @@ version: '3.8'
 
 # AI Agent Personal - Docker Compose
 # Compatible with: x86_64 (local) and arm64/aarch64 (Oracle Cloud)
-# For Oracle Cloud: change Ollama model to qwen2:14b for better quality
+# For Oracle Cloud: set OLLAMA_MODEL=qwen2:14b in .env for better quality
 # Usage: docker-compose up -d
 
 services:
@@ -24,6 +24,8 @@ services:
       - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.1:8b}
+      - OLLAMA_MODEL_NOVEL=${OLLAMA_MODEL_NOVEL:-qwen2:7b}
     volumes:
       - n8n_data:/home/node/.n8n
     depends_on:

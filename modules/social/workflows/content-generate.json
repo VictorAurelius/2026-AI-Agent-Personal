@@ -61,7 +61,7 @@
         "url": "http://ollama:11434/api/chat",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  \"model\": \"llama3.1:8b\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": $json.system_prompt},\n    {\"role\": \"user\", \"content\": $json.user_prompt}\n  ],\n  \"stream\": false\n} }}",
+        "jsonBody": "={{ {\n  \"model\": ($env.OLLAMA_MODEL || \"llama3.1:8b\"),\n  \"messages\": [\n    {\"role\": \"system\", \"content\": $json.system_prompt},\n    {\"role\": \"user\", \"content\": $json.user_prompt}\n  ],\n  \"stream\": false\n} }}",
         "options": {
           "timeout": 120000
         }

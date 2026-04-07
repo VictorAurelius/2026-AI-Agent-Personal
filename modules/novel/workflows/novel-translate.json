@@ -164,7 +164,7 @@
         "url": "http://ollama:11434/api/chat",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  \"model\": \"qwen2:7b\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": $json.system_prompt},\n    {\"role\": \"user\", \"content\": $json.user_prompt}\n  ],\n  \"stream\": false,\n  \"options\": {\"num_ctx\": 8192}\n} }}",
+        "jsonBody": "={{ {\n  \"model\": ($env.OLLAMA_MODEL_NOVEL || \"qwen2:7b\"),\n  \"messages\": [\n    {\"role\": \"system\", \"content\": $json.system_prompt},\n    {\"role\": \"user\", \"content\": $json.user_prompt}\n  ],\n  \"stream\": false,\n  \"options\": {\"num_ctx\": 8192}\n} }}",
         "options": {"timeout": 300000}
       },
       "id": "translate",

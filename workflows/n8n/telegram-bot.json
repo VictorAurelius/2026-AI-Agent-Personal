@@ -272,7 +272,7 @@
         "url": "http://ollama:11434/api/chat",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"llama3.1:8b\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a professional LinkedIn content writer for Vietnamese IT professionals. Write in Vietnamese.\"},\n    {\"role\": \"user\", \"content\": \"{{ $json.prompt }}\"}\n  ],\n  \"stream\": false\n}",
+        "jsonBody": "={\n  \"model\": \"{{ $env.OLLAMA_MODEL || 'llama3.1:8b' }}\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a professional LinkedIn content writer for Vietnamese IT professionals. Write in Vietnamese.\"},\n    {\"role\": \"user\", \"content\": \"{{ $json.prompt }}\"}\n  ],\n  \"stream\": false\n}",
         "options": {
           "timeout": 120000
         }
@@ -518,7 +518,7 @@
         "url": "http://ollama:11434/api/chat",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "{\n  \"model\": \"llama3.1:8b\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a social media content strategist for Vietnamese IT professionals.\"},\n    {\"role\": \"user\", \"content\": \"Suggest 5 social media topic ideas for Vietnamese IT professionals. Output as a numbered list in Vietnamese. Each topic should include the content pillar (tech_insights, career_growth, or behind_the_scenes).\"}\n  ],\n  \"stream\": false\n}",
+        "jsonBody": "={\n  \"model\": \"{{ $env.OLLAMA_MODEL || 'llama3.1:8b' }}\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are a social media content strategist for Vietnamese IT professionals.\"},\n    {\"role\": \"user\", \"content\": \"Suggest 5 social media topic ideas for Vietnamese IT professionals. Output as a numbered list in Vietnamese. Each topic should include the content pillar (tech_insights, career_growth, or behind_the_scenes).\"}\n  ],\n  \"stream\": false\n}",
         "options": {
           "timeout": 120000
         }
