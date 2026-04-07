@@ -174,7 +174,7 @@
         "url": "http://ollama:11434/api/generate",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"{{ $env.OLLAMA_MODEL || 'llama3.2' }}\",\n  \"prompt\": {{ JSON.stringify($json.user_prompt) }},\n  \"system\": {{ JSON.stringify($json.system_prompt) }},\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 0.7,\n    \"num_predict\": 500\n  }\n}",
+        "jsonBody": "={\n  \"model\": \"{{ $env.OLLAMA_MODEL || 'gemma4:e4b' }}\",\n  \"prompt\": {{ JSON.stringify($json.user_prompt) }},\n  \"system\": {{ JSON.stringify($json.system_prompt) }},\n  \"stream\": false,\n  \"options\": {\n    \"temperature\": 0.7,\n    \"num_predict\": 500\n  }\n}",
         "options": {
           "timeout": 120000
         }

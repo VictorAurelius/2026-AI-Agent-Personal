@@ -29,13 +29,13 @@ code .env
 docker-compose up -d
 ```
 
-### 4. Pull Llama model
+### 4. Pull Gemma 4 model
 
 ```bash
-docker exec -it ollama ollama pull llama3.1:8b
+docker exec -it ollama ollama pull gemma4:e4b
 ```
 
-This downloads ~4.7GB. Wait for completion.
+Wait for download to complete.
 
 ### 5. Access n8n
 
@@ -102,7 +102,7 @@ docker ps --format "table {{.Names}}\t{{.Status}}"
 ### Test Ollama
 ```bash
 curl http://localhost:11434/api/generate -d '{
-  "model": "llama3.1:8b",
+  "model": "gemma4:e4b",
   "prompt": "Hello, write a short greeting.",
   "stream": false
 }'
@@ -164,9 +164,9 @@ docker-compose up -d
 |---------|-----|------|
 | n8n | 512MB - 2GB | 1GB |
 | PostgreSQL | 256MB - 1GB | 5GB |
-| Ollama + Llama 3.1 8B | 8-10GB | 5GB |
+| Ollama + Gemma 4 E4B | 6-8GB | 4GB |
 | Redis | 64MB - 256MB | 100MB |
-| **Total** | **~12GB** | **~12GB** |
+| **Total** | **~10GB** | **~10GB** |
 
 Your system: 32GB RAM - more than enough!
 

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Pull Llama 3.1 8B model for Ollama
+# Pull Gemma 4 E4B model for Ollama
 # Usage: ./scripts/pull-model.sh
 
 set -e
@@ -11,7 +11,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 echo "========================================"
-echo "  Pulling Llama 3.1 8B Model"
+echo "  Pulling Gemma 4 E4B Model"
 echo "========================================"
 echo ""
 
@@ -47,7 +47,7 @@ fi
 # Check if model already exists
 echo ""
 echo "Checking if model exists..."
-if docker exec ollama ollama list 2>/dev/null | grep -q "llama3.1:8b"; then
+if docker exec ollama ollama list 2>/dev/null | grep -q "gemma4:e4b"; then
     echo -e "${GREEN}✓ Model already downloaded${NC}"
     docker exec ollama ollama list
     exit 0
@@ -55,11 +55,11 @@ fi
 
 # Pull model
 echo ""
-echo -e "${YELLOW}Downloading Llama 3.1 8B model (~4.7GB)...${NC}"
+echo -e "${YELLOW}Downloading Gemma 4 E4B model...${NC}"
 echo "This may take several minutes depending on your connection."
 echo ""
 
-if docker exec ollama ollama pull llama3.1:8b; then
+if docker exec ollama ollama pull gemma4:e4b; then
     echo ""
     echo -e "${GREEN}========================================"
     echo "  Model downloaded successfully!"
