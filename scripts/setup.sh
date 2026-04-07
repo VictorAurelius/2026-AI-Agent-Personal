@@ -147,20 +147,20 @@ fi
 docker-compose ps
 
 # Pull Ollama model
-print_step "Pulling Llama 3.1 8B model..."
-echo -e "${YELLOW}This downloads ~4.7GB and may take several minutes...${NC}"
+print_step "Pulling Gemma 4 E4B model..."
+echo -e "${YELLOW}This may take several minutes...${NC}"
 echo ""
 
-if docker exec ollama ollama list 2>/dev/null | grep -q "llama3.1:8b"; then
+if docker exec ollama ollama list 2>/dev/null | grep -q "gemma4:e4b"; then
     echo -e "${GREEN}✓ Model already downloaded${NC}"
 else
-    docker exec ollama ollama pull llama3.1:8b
+    docker exec ollama ollama pull gemma4:e4b
     if [ $? -eq 0 ]; then
         echo -e "${GREEN}✓ Model downloaded successfully${NC}"
     else
         echo -e "${RED}ERROR: Failed to download model${NC}"
         echo "You can manually download it later with:"
-        echo "  docker exec ollama ollama pull llama3.1:8b"
+        echo "  docker exec ollama ollama pull gemma4:e4b"
     fi
 fi
 

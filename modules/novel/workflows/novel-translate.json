@@ -164,11 +164,11 @@
         "url": "http://ollama:11434/api/chat",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ {\n  \"model\": ($env.OLLAMA_MODEL_NOVEL || \"qwen2:7b\"),\n  \"messages\": [\n    {\"role\": \"system\", \"content\": $json.system_prompt},\n    {\"role\": \"user\", \"content\": $json.user_prompt}\n  ],\n  \"stream\": false,\n  \"options\": {\"num_ctx\": 8192}\n} }}",
+        "jsonBody": "={{ {\n  \"model\": ($env.OLLAMA_MODEL_NOVEL || \"gemma4:26b\"),\n  \"messages\": [\n    {\"role\": \"system\", \"content\": $json.system_prompt},\n    {\"role\": \"user\", \"content\": $json.user_prompt}\n  ],\n  \"stream\": false,\n  \"options\": {\"num_ctx\": 8192}\n} }}",
         "options": {"timeout": 300000}
       },
       "id": "translate",
-      "name": "Translate (Qwen2)",
+      "name": "Translate (Gemma4)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [2640, 400]
@@ -199,7 +199,7 @@
     {
       "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const data = $('Parse Translation').first().json;\nconst text = data.translated_text_raw;\n\n// Telegram max 4096 chars - split into messages\nconst MAX_LEN = 3800;\nconst messages = [];\n\n// First message with header\nlet header = `📖 *${data.title_cn} - ${data.title_vn}*\\n`;\nheader += `📑 *Chương ${data.chapter_number}: ${data.chapter_title.replace(/'/g, '')}*\\n`;\nheader += `👤 ${data.author}\\n\\n---\\n\\n`;\n\nif (header.length + text.length <= MAX_LEN) {\n  messages.push(header + text + `\\n\\n---\\n📊 ${data.char_count} chữ | 🤖 Qwen2 7B`);\n} else {\n  // Split text into chunks\n  const chunks = [];\n  let remaining = text;\n  while (remaining.length > 0) {\n    if (remaining.length <= MAX_LEN - 200) {\n      chunks.push(remaining);\n      break;\n    }\n    // Find paragraph break near limit\n    let splitAt = remaining.lastIndexOf('\\n\\n', MAX_LEN - 200);\n    if (splitAt < MAX_LEN / 2) splitAt = remaining.lastIndexOf('\\n', MAX_LEN - 200);\n    if (splitAt < MAX_LEN / 2) splitAt = MAX_LEN - 200;\n    chunks.push(remaining.substring(0, splitAt));\n    remaining = remaining.substring(splitAt).trim();\n  }\n  \n  messages.push(header + chunks[0]);\n  for (let i = 1; i < chunks.length; i++) {\n    if (i === chunks.length - 1) {\n      messages.push(chunks[i] + `\\n\\n---\\n📊 ${data.char_count} chữ | 🤖 Qwen2 7B`);\n    } else {\n      messages.push(chunks[i]);\n    }\n  }\n}\n\nreturn messages.map((msg, i) => ({ json: { message: msg, part: i + 1, total: messages.length } }));"
+        "jsCode": "const data = $('Parse Translation').first().json;\nconst text = data.translated_text_raw;\n\n// Telegram max 4096 chars - split into messages\nconst MAX_LEN = 3800;\nconst messages = [];\n\n// First message with header\nlet header = `📖 *${data.title_cn} - ${data.title_vn}*\\n`;\nheader += `📑 *Chương ${data.chapter_number}: ${data.chapter_title.replace(/'/g, '')}*\\n`;\nheader += `👤 ${data.author}\\n\\n---\\n\\n`;\n\nif (header.length + text.length <= MAX_LEN) {\n  messages.push(header + text + `\\n\\n---\\n📊 ${data.char_count} chữ | 🤖 Gemma4 26B`);\n} else {\n  // Split text into chunks\n  const chunks = [];\n  let remaining = text;\n  while (remaining.length > 0) {\n    if (remaining.length <= MAX_LEN - 200) {\n      chunks.push(remaining);\n      break;\n    }\n    // Find paragraph break near limit\n    let splitAt = remaining.lastIndexOf('\\n\\n', MAX_LEN - 200);\n    if (splitAt < MAX_LEN / 2) splitAt = remaining.lastIndexOf('\\n', MAX_LEN - 200);\n    if (splitAt < MAX_LEN / 2) splitAt = MAX_LEN - 200;\n    chunks.push(remaining.substring(0, splitAt));\n    remaining = remaining.substring(splitAt).trim();\n  }\n  \n  messages.push(header + chunks[0]);\n  for (let i = 1; i < chunks.length; i++) {\n    if (i === chunks.length - 1) {\n      messages.push(chunks[i] + `\\n\\n---\\n📊 ${data.char_count} chữ | 🤖 Gemma4 26B`);\n    } else {\n      messages.push(chunks[i]);\n    }\n  }\n}\n\nreturn messages.map((msg, i) => ({ json: { message: msg, part: i + 1, total: messages.length } }));"
       },
       "id": "split-messages",
       "name": "Split Messages",
@@ -239,8 +239,8 @@
     "Fetch Chapter": {"main": [[{"node": "Extract Text", "type": "main", "index": 0}]]},
     "Extract Text": {"main": [[{"node": "Get Glossary", "type": "main", "index": 0}]]},
     "Get Glossary": {"main": [[{"node": "Prepare Translation", "type": "main", "index": 0}]]},
-    "Prepare Translation": {"main": [[{"node": "Translate (Qwen2)", "type": "main", "index": 0}]]},
-    "Translate (Qwen2)": {"main": [[{"node": "Parse Translation", "type": "main", "index": 0}]]},
+    "Prepare Translation": {"main": [[{"node": "Translate (Gemma4)", "type": "main", "index": 0}]]},
+    "Translate (Gemma4)": {"main": [[{"node": "Parse Translation", "type": "main", "index": 0}]]},
     "Parse Translation": {"main": [[{"node": "Save Translation", "type": "main", "index": 0}]]},
     "Save Translation": {"main": [[{"node": "Split Messages", "type": "main", "index": 0}]]},
     "Split Messages": {"main": [[{"node": "Send Translation", "type": "main", "index": 0}]]}

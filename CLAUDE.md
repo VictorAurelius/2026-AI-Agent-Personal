@@ -85,7 +85,7 @@ ai-agent-personal/
 Docker Compose (WSL2 or Oracle Cloud ARM)
 ├── n8n (:5678)        — 12 workflows (8 social + 1 novel + 3 common)
 ├── PostgreSQL (:5432) — 11 SQL init scripts
-├── Ollama (:11434)    — Llama 3.1 8B / Qwen2 14B
+├── Ollama (:11434)    — Gemma 4 E4B / Gemma 4 26B MoE
 └── Redis (:6379)      — Caching
 
 Modules:
