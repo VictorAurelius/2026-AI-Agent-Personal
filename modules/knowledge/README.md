@@ -1,16 +1,16 @@
 # Knowledge Notebooks
 
-Module tu hoc kien thuc de dat tieu chuan **SE L3 + PM L4** theo CMMI Level 3 va Khung Danh Gia Nang Luc.
+Module tự học kiến thức để đạt tiêu chuẩn **SE L3 + PM L4** theo CMMI Level 3 và Khung Đánh Giá Năng Lực.
 
-## Tong quan
+## Tổng quan
 
-| Danh muc | So notebook | Noi dung chinh |
+| Danh mục | Số notebook | Nội dung chính |
 |----------|-------------|----------------|
-| **01-technical/** | 10 | Ky thuat: API, DB, Batch, Security, Architecture, Testing, Review, UI, Common, Docs |
-| **02-professional/** | 10 | Chuyen mon: Planning, Requirements, Risk, Quality, Agile, CMMI, CM, Metrics, Improvement, Leadership |
-| **03-other/** | 5 | Khac: Japanese comm, Culture, Soft skills, Business acumen, Glossary |
+| **01-technical/** | 10 | Kỹ thuật: API, DB, Batch, Security, Architecture, Testing, Review, UI, Common, Docs |
+| **02-professional/** | 10 | Chuyên môn: Planning, Requirements, Risk, Quality, Agile, CMMI, CM, Metrics, Improvement, Leadership |
+| **03-other/** | 5 | Khác: Japanese comm, Culture, Soft skills, Business acumen, Glossary |
 
-## Mapping: Notebook → Nang luc SE/PM → CMMI
+## Mapping: Notebook → Năng lực SE/PM → CMMI
 
 ### Technical (SE-focused)
 
@@ -52,52 +52,52 @@ Module tu hoc kien thuc de dat tieu chuan **SE L3 + PM L4** theo CMMI Level 3 va
 | 4 | business-acumen | PM #7 ステークホルダー管理 | — | L1→L3 |
 | 5 | glossary-japanese | SE #4, PM #5 | — | Reference |
 
-## Lo trinh hoc
+## Lộ trình học
 
-### Giai doan 1 — Foundation (SE L1 + PM L1) ~15h
+### Giai đoạn 1 — Foundation (SE L1 + PM L1) ~15h
 
-1. `03-other/05-glossary-japanese` — Thuat ngu co ban
-2. `01-technical/01-api-design` — API co ban
-3. `01-technical/02-database-design` — Database co ban
-4. `01-technical/03-batch-processing` — Batch co ban
+1. `03-other/05-glossary-japanese` — Thuật ngữ cơ bản
+2. `01-technical/01-api-design` — API cơ bản
+3. `01-technical/02-database-design` — Database cơ bản
+4. `01-technical/03-batch-processing` — Batch cơ bản
 5. `01-technical/09-common-design` — Naming conventions, utilities
-6. `02-professional/06-cmmi-process-overview` — CMMI overview
-7. `03-other/01-japanese-communication` — Horenso co ban
-8. `03-other/02-japanese-business-culture` — Van hoa Nhat
+6. `02-professional/06-cmmi-process-overview` — CMMI tổng quan
+7. `03-other/01-japanese-communication` — Horenso cơ bản
+8. `03-other/02-japanese-business-culture` — Văn hoá Nhật
 
-### Giai doan 2 — Independent (SE L2 + PM L2) ~15h
+### Giai đoạn 2 — Independent (SE L2 + PM L2) ~15h
 
 1. `01-technical/04-security-authentication` — Security & RBAC
 2. `01-technical/05-architecture-patterns` — Architecture
-3. `01-technical/06-testing-verification` — Testing techniques
+3. `01-technical/06-testing-verification` — Kỹ thuật testing
 4. `01-technical/07-code-review-standards` — Code review
-5. `02-professional/01-project-planning` — WBS, estimation
+5. `02-professional/01-project-planning` — WBS, ước lượng
 6. `02-professional/02-requirement-management` — Traceability
-7. `02-professional/03-risk-management` — 7-step risk process
+7. `02-professional/03-risk-management` — Quy trình 7 bước
 8. `02-professional/04-quality-management` — GQM, metrics
 9. `02-professional/05-agile-scrum-kanban` — Scrum, Sprint 0
 
-### Giai doan 3 — Leadership (SE L3 + PM L3/L4) ~15h
+### Giai đoạn 3 — Leadership (SE L3 + PM L3/L4) ~15h
 
 1. `01-technical/08-ui-frontend-design` — UI specs
-2. `01-technical/10-documentation-specs` — Doc guidelines
-3. `02-professional/07-config-management` — CM strategy
-4. `02-professional/08-measurement-analysis` — Trend analysis, RAG
+2. `01-technical/10-documentation-specs` — Hướng dẫn tài liệu
+3. `02-professional/07-config-management` — Chiến lược CM
+4. `02-professional/08-measurement-analysis` — Phân tích xu hướng, RAG
 5. `02-professional/09-process-improvement` — CAR, Kaizen
-6. `02-professional/10-stakeholder-leadership` — Negotiation, team building
-7. `03-other/03-soft-skills` — EQ, problem solving
-8. `03-other/04-business-acumen` — ROI, customer perspective
+6. `02-professional/10-stakeholder-leadership` — Đàm phán, xây dựng team
+7. `03-other/03-soft-skills` — EQ, giải quyết vấn đề
+8. `03-other/04-business-acumen` — ROI, góc nhìn khách hàng
 
-## Cach su dung
+## Cách sử dụng
 
-1. Doc theo lo trinh (Giai doan 1 → 2 → 3)
-2. Moi notebook: doc ly thuyet → lam bai tap tu kiem tra → tu cham diem
-3. Cap nhat `progress.yaml` sau moi notebook:
+1. Đọc theo lộ trình (Giai đoạn 1 → 2 → 3)
+2. Mỗi notebook: đọc lý thuyết → làm bài tập tự kiểm tra → tự chấm điểm
+3. Cập nhật `progress.yaml` sau mỗi notebook:
    - `status`: not_started → in_progress → completed
-   - `level`: L1 / L2 / L3 (level dat duoc)
-   - `last_reviewed`: ngay doc gan nhat
+   - `level`: L1 / L2 / L3 (level đạt được)
+   - `last_reviewed`: ngày đọc gần nhất
 
-## Nguon tai lieu
+## Nguồn tài liệu
 
 - `documents/07-archived/cmmi-main/` — CMMI Level 3 PAL (250 docs)
-- `documents/07-archived/khung-danh-gia-nang-luc-main/` — Khung Danh Gia Nang Luc (28 docs)
+- `documents/07-archived/khung-danh-gia-nang-luc-main/` — Khung Đánh Giá Năng Lực (28 docs)
