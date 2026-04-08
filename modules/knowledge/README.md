@@ -90,12 +90,29 @@ Module tự học kiến thức để đạt tiêu chuẩn **SE L3 + PM L4** the
 
 ## Cách sử dụng
 
+### Mở notebook
+
+```bash
+# Jupyter Notebook (browser)
+jupyter notebook modules/knowledge/01-technical/01-api-design.ipynb
+
+# VS Code: cài extension "Jupyter" rồi mở file .ipynb
+```
+
+### Quy trình học
+
 1. Đọc theo lộ trình (Giai đoạn 1 → 2 → 3)
 2. Mỗi notebook: đọc lý thuyết → làm bài tập tự kiểm tra → tự chấm điểm
 3. Cập nhật `progress.yaml` sau mỗi notebook:
    - `status`: not_started → in_progress → completed
    - `level`: L1 / L2 / L3 (level đạt được)
    - `last_reviewed`: ngày đọc gần nhất
+
+### Font tiếng Việt
+
+Notebooks sử dụng font **Be Vietnam Pro** (Google Fonts) — font chuyên cho tiếng Việt.
+- Cần kết nối internet lần đầu để load font
+- Nếu offline: tự động fallback sang Segoe UI / system sans-serif
 
 ## Nguồn tài liệu
 
