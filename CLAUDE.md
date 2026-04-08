@@ -47,7 +47,8 @@ ai-agent-personal/
 │   └── dashboard/                  # web UI
 ├── modules/
 │   ├── social/                     # Social automation (8 workflows + prompts)
-│   └── novel/                      # Novel translation (1 workflow)
+│   ├── novel/                      # Novel translation (1 workflow)
+│   └── knowledge/                  # Knowledge notebooks (25 topics, SE+PM)
 ├── workflows/n8n/                  # Common workflows (healthcheck, bot, digest)
 ├── scripts/                        # Common scripts
 └── .claude/                        # Claude Code config

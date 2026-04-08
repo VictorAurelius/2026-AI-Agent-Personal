@@ -1,0 +1,37 @@
+# Knowledge Notebook Progress Tracker
+# Updated: 2026-04-08
+# Target: SE L3 + PM L4
+
+technical:
+  api-design: { status: not_started, level: null, last_reviewed: null }
+  database-design: { status: not_started, level: null, last_reviewed: null }
+  batch-processing: { status: not_started, level: null, last_reviewed: null }
+  security-authentication: { status: not_started, level: null, last_reviewed: null }
+  architecture-patterns: { status: not_started, level: null, last_reviewed: null }
+  testing-verification: { status: not_started, level: null, last_reviewed: null }
+  code-review-standards: { status: not_started, level: null, last_reviewed: null }
+  ui-frontend-design: { status: not_started, level: null, last_reviewed: null }
+  common-design: { status: not_started, level: null, last_reviewed: null }
+  documentation-specs: { status: not_started, level: null, last_reviewed: null }
+
+professional:
+  project-planning: { status: not_started, level: null, last_reviewed: null }
+  requirement-management: { status: not_started, level: null, last_reviewed: null }
+  risk-management: { status: not_started, level: null, last_reviewed: null }
+  quality-management: { status: not_started, level: null, last_reviewed: null }
+  agile-scrum-kanban: { status: not_started, level: null, last_reviewed: null }
+  cmmi-process-overview: { status: not_started, level: null, last_reviewed: null }
+  config-management: { status: not_started, level: null, last_reviewed: null }
+  measurement-analysis: { status: not_started, level: null, last_reviewed: null }
+  process-improvement: { status: not_started, level: null, last_reviewed: null }
+  stakeholder-leadership: { status: not_started, level: null, last_reviewed: null }
+
+other:
+  japanese-communication: { status: not_started, level: null, last_reviewed: null }
+  japanese-business-culture: { status: not_started, level: null, last_reviewed: null }
+  soft-skills: { status: not_started, level: null, last_reviewed: null }
+  business-acumen: { status: not_started, level: null, last_reviewed: null }
+  glossary-japanese: { status: not_started, level: null, last_reviewed: null }
+
+# status: not_started | in_progress | completed
+# level: null | L1 | L2 | L3 | L4
